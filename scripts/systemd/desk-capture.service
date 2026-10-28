@@ -1,0 +1,21 @@
+# Order-book + trade collector — the durable capture loop.
+# Installed as a systemd --user unit (runs as your login user, no root).
+# WorkingDirectory below is a PLACEHOLDER: %h is your home dir, so this expects the
+# checkout at ~/desk-repo. Put it elsewhere? sed the path (see scripts/systemd/README.md).
+[Unit]
+Description=The Desk — order-book + trade capture
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/desk-repo
+# Optional: paper/backtest need NO env. The `-` makes a missing .env non-fatal so the
+# unit starts out of the box; live/real-money keys go here once you deploy them.
+EnvironmentFile=-%h/desk-repo/.env
+ExecStart=/usr/bin/env python3 -m desk.data.capture desk/capture_config.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

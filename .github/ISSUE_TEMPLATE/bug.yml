@@ -1,0 +1,56 @@
+name: Bug
+description: Something is wrong. Every confirmed failure becomes a golden/eval case in the fix PR.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        House rule: the fix PR must land this failure as a named eval/golden case that is RED
+        before the fix and GREEN after — the bug class, not just the instance, stays fixed.
+        Triage converts the hints below into `tier:*` / `lane:*` / `risk:*` labels.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Exact commands / inputs, smallest case you found.
+      placeholder: |
+        python3 -m desk.verify gate --json
+        python3 -m desk.driver.strategy_driver --once
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Gate output, logs, tracebacks, screenshots — paste what you saw, not a summary.
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk hint
+      options:
+        - "risk:low — cosmetic / docs / isolated UI"
+        - "risk:std — framework behavior inside existing contracts"
+        - "risk:core — money semantics, eval/golden integrity, live path"
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane hint
+      options:
+        - "lane:G — reproducible offline (eval-fast / static evidence)"
+        - "lane:L — needs local runtime state to reproduce or verify"
+    validations:
+      required: true

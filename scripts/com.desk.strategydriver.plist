@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Strategy driver — THE one forward/live runtime (registry -> driver -> engine).
+     Paper by default; live needs LIVE_TRADING_ENABLED=true + scoped PASS — NEVER exported here (a plist
+     env export is a behavior-flag contamination class; live enable = explicit manual invocation only).
+     True loop -> KeepAlive allowed (per-fire SIGALRM watchdog + singleton lock inside).
+     Install:
+       cp scripts/com.desk.strategydriver.plist ~/Library/LaunchAgents/
+       launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.desk.strategydriver.plist
+     Stop:  launchctl bootout gui/$UID/com.desk.strategydriver -->
+<!-- PATH PLACEHOLDER: launchd needs absolute paths — before installing, point every
+     /Users/YOUR_USERNAME/desk-repo at your checkout:
+       sed -i "" "s#/Users/YOUR_USERNAME/desk-repo#$PWD#g" scripts/com.desk.*.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.desk.strategydriver</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd "/Users/YOUR_USERNAME/desk-repo" &amp;&amp; exec python3 -m desk.driver.strategy_driver</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>WorkingDirectory</key><string>/Users/YOUR_USERNAME/desk-repo</string>
+  <key>EnvironmentVariables</key><dict><key>OMP_NUM_THREADS</key><string>2</string></dict>
+  <key>StandardOutPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/driver/driver.out</string>
+  <key>StandardErrorPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/driver/driver.err</string>
+  <key>Nice</key><integer>5</integer>
+</dict>
+</plist>

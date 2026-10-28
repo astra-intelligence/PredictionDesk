@@ -1,0 +1,71 @@
+# scrub — the leak boundary, enforced per-PR instead of only at cut time (design §2.4).
+#
+# `scrub` is a REQUIRED status check on dev/main. It runs scripts/ci/scrub.sh — the SAME script
+# the release cut runs — so there is exactly one scrub implementation. The private forbidden-term
+# list arrives via the SCRUB_PATTERNS repo secret (set by scripts/ci/setup_github.sh); the list
+# itself never lands in this public-bound tree.
+#
+# Fork-PR semantics (post-flip): GitHub withholds secrets from fork PRs, so a fork PR gets the
+# generic + structural checks only (SCRUB_REQUIRE_PATTERNS=0). That is safe: the term list guards
+# OUR material leaking from OUR branches; outsiders cannot leak terms they do not know. Pushes to
+# dev/main re-run the full list on the merged tree, so nothing merges past the boundary unchecked.
+# SCRUB_REDACT=1 keeps matched text out of (post-flip public) CI logs.
+#
+# `gitleaks` is a second, independent secret scanner (defense in depth). The weekly scheduled run
+# adds a full-history term scan so a leak that slipped in historically is still surfaced.
+name: scrub
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  schedule:
+    - cron: "17 3 * * 1" # weekly full-history scan, Monday 03:17 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scrub-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scrub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SCRUB_PATTERNS: ${{ secrets.SCRUB_PATTERNS }}
+      SCRUB_REDACT: "1"
+      # Require the real term list everywhere except fork PRs (where secrets are withheld).
+      SCRUB_REQUIRE_PATTERNS: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.event_name == 'schedule' && 0 || 1 }}
+      - name: scrub (shared gate)
+        run: bash scripts/ci/scrub.sh .
+      - name: full-history term scan (weekly)
+        if: github.event_name == 'schedule'
+        run: |
+          # List commits whose DIFFS ever touched a forbidden term (redacted: SHAs + files only).
+          if [ -z "$SCRUB_PATTERNS" ]; then echo "no SCRUB_PATTERNS secret — skipping"; exit 0; fi
+          BAD="$(git log --all -i -G"$SCRUB_PATTERNS" --format='commit %H' --name-only || true)"
+          if [ -n "$BAD" ]; then
+            echo "$BAD"
+            echo "FULL-HISTORY SCRUB FAIL: forbidden terms exist in history — needs a history rewrite before any visibility flip"
+            exit 3
+          fi
+          echo "full-history scan: clean"
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Third-party action: SHA-pin at apply time (see scripts/ci/setup_github.sh notes).
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

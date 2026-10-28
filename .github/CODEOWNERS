@@ -1,0 +1,29 @@
+# CODEOWNERS — the substrate half of the protected-path rule (design §5.3 + §12.3; the local
+# half is Claude Code deny-hooks in worker sessions). Order matters: the LAST matching pattern
+# wins, so the broad default comes first and the unowned (auto-merge-eligible) classes come last.
+#
+# One human account exists on this repo today, so T0 (owner-as-Tiger) and T1 (PM review, operated
+# through the same account) are distinguished by PR labels + process, not by distinct owners.
+# If a PM machine account is ever added, split the desk/** rows onto it.
+
+# Default: everything is owner-reviewed until a later rule says otherwise.
+* @stranger00135
+
+# ── desk framework (engine, driver, store, eval, live path) — reviewed, tier per change class ──
+desk/ @stranger00135
+
+# ── T0 protected paths: the measuring stick. An agent that can edit these can fake green. ──────
+# PINNED at T0 forever — never loosened by the autonomy ratchet.
+desk/eval/golden/ @stranger00135
+desk/signals/strategy_config.json @stranger00135
+desk/verify.py @stranger00135
+scripts/ci/ @stranger00135
+scripts/release_public.sh @stranger00135
+scripts/release_private.sh @stranger00135
+scripts/release/ @stranger00135
+.github/ @stranger00135
+
+# ── Auto-merge-eligible classes (NO owner): T2 rows merge on all-green machine gates + verifier,
+#    per the tier table. A pattern with no owner clears the default above. ─────────────────────
+docs/
+strategies/lab/

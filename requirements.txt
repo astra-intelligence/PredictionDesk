@@ -1,0 +1,4 @@
+pyarrow==26.0.0
+requests==2.34.2
+py-clob-client-v2==1.2.1
+mcp==2.3.0

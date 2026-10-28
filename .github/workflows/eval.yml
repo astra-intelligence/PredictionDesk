@@ -1,0 +1,73 @@
+# eval — the PR quality bar (harness pipeline step 6, machine gates).
+#
+# `eval-fast` and `py-compile` are REQUIRED status checks on dev/main (configured by
+# scripts/ci/setup_github.sh). The gate runs in a FRESH venv on a fresh runner so the author's
+# environment is never trusted: the repo's own fail-closed golden gate (core framework sections +
+# every discovered tenant's eval_checks) is offline by design — no store, no network, no keys.
+# `eval-fast-macos` is advisory only (never a required check): dev machines are Macs.
+#
+# Public-repo safety: pull_request only (never pull_request_target), least-privilege permissions,
+# no secrets used — safe on fork PRs.
+name: eval
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fresh venv
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip -q install -r requirements.txt
+      - name: eval-fast (offline golden gate)
+        run: |
+          source .ci-venv/bin/activate
+          make eval-fast
+
+  py-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: compileall
+        run: python3 -m compileall -q .
+
+  # Advisory (continue-on-error, never required): catches macOS-only breakage early since the
+  # primary dev machines are Macs, without spending required-check latency on a 10x-cost runner.
+  eval-fast-macos:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fresh venv
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip -q install -r requirements.txt
+      - name: eval-fast (offline golden gate)
+        run: |
+          source .ci-venv/bin/activate
+          make eval-fast

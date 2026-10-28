@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PATH PLACEHOLDER: launchd needs absolute paths — before installing, point every
+     /Users/YOUR_USERNAME/desk-repo at your checkout:
+       sed -i "" "s#/Users/YOUR_USERNAME/desk-repo#$PWD#g" scripts/com.desk.*.plist
+-->
+<!-- Durable collector. Install:
+       cp scripts/com.desk.capture.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.desk.capture.plist
+     Stop:  launchctl unload ~/Library/LaunchAgents/com.desk.capture.plist -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.desk.capture</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd "/Users/YOUR_USERNAME/desk-repo" &amp;&amp; exec python3 -m desk.data.capture desk/capture_config.json</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>WorkingDirectory</key><string>/Users/YOUR_USERNAME/desk-repo</string>
+  <key>StandardOutPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/data/capture/capture.out</string>
+  <key>StandardErrorPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/data/capture/capture.err</string>
+</dict>
+</plist>

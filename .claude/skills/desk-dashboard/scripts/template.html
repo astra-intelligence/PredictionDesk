@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PredictionDesk · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0c0e12;--bg2:#11141a;--panel:#151921;--panel2:#1a1f29;--panel3:#1f2530;--line:#262d39;
+  --ink:#e9e4d6;--ink-dim:#9aa1ad;--ink-faint:#646b78;
+  --cold:#4f9dc9;--warm:#e0a44a;--hot:#d6533f;
+  --pos:#5bbf8f;--neg:#e0644f;--neu:#7f8794;
+  --taker:#e0a44a;--maker:#6fa8d6;--mkt:#b58bd0;
+  --serif:'Instrument Serif',Georgia,serif;--mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(1200px 700px at 80% -10%,rgba(224,164,74,.06),transparent 60%),radial-gradient(900px 600px at -10% 20%,rgba(79,157,201,.05),transparent 55%);background-attachment:fixed;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");}
+.wrap{position:relative;z-index:1;max-width:none;margin:0;padding:0 8px 60px}
+a{color:inherit}.mono{font-family:var(--mono)}
+header{padding:18px 0 12px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.spine{height:3px;border-radius:3px;margin-bottom:24px;background:linear-gradient(90deg,var(--cold),#5bbf8f,var(--warm),var(--hot));}
+.brandrow{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:18px}
+h1{font-family:var(--serif);font-weight:400;font-size:54px;line-height:.95;letter-spacing:.5px}
+h1 .em{font-style:italic;color:var(--warm)}
+.sub{color:var(--ink-dim);font-size:13.5px;margin-top:8px;max-width:600px}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);text-align:right;line-height:1.9}
+.meta b{color:var(--ink-dim);font-weight:500}
+.seclabel{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);margin:6px 0 16px;display:flex;align-items:center;gap:12px}
+.seclabel::after{content:"";flex:1;height:1px;background:var(--line)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{border-collapse:collapse;width:auto;min-width:60%;font-family:var(--mono);font-size:11px}
+thead th{font-weight:500;color:var(--ink-faint);text-align:right;padding:6px 6px;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--panel);z-index:2}
+thead th:first-child,tbody td:first-child{text-align:left}
+th.sorth{cursor:pointer;user-select:none}th.sorth:hover{color:var(--warm)}
+thead th.l,tbody td.l{text-align:left}
+tbody td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
+tbody tr.clk{cursor:pointer;transition:background .15s}
+tbody tr.clk:last-child td{border-bottom:none}
+tbody tr.clk:hover{background:var(--panel2)}
+.armname{font-weight:600;font-size:12px;letter-spacing:.01em}
+.armname .arrow{color:var(--ink-faint);margin-left:7px;transition:transform .15s,color .15s}
+tbody tr.clk:hover .arrow{transform:translateX(3px);color:var(--warm)}
+.badge{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2.5px 7px;border-radius:5px;border:1px solid;vertical-align:middle}
+.b-taker{color:var(--taker);border-color:rgba(224,164,74,.4);background:rgba(224,164,74,.08)}
+.b-maker{color:var(--maker);border-color:rgba(111,168,214,.4);background:rgba(111,168,214,.08)}
+.b-marketable{color:var(--mkt);border-color:rgba(181,139,208,.4);background:rgba(181,139,208,.08)}
+.b-gauge{color:#9bbf6f;border-color:rgba(155,191,111,.35);background:rgba(155,191,111,.07)}
+.b-gbt{color:#d98fb0;border-color:rgba(217,143,176,.4);background:rgba(217,143,176,.08)}
+.b-open{color:var(--cold);border-color:rgba(79,157,201,.4);background:rgba(79,157,201,.08)}
+.b-resting{color:var(--neu);border-color:rgba(127,135,148,.4);background:rgba(127,135,148,.08)}
+.b-closed{color:var(--ink-faint);border-color:var(--line);background:transparent}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.neu{color:var(--ink-faint)}.warn{color:var(--warm)}.big{font-size:14px;font-weight:600}
+#detail{display:none;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.back{font-family:var(--mono);font-size:12px;color:var(--ink-dim);cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px;transition:color .15s}
+.back:hover{color:var(--warm)}
+.dvhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:6px 0 4px}
+.dvhead h2{font-family:var(--serif);font-weight:400;font-size:42px;letter-spacing:.5px}
+.dvdesc{color:var(--ink-dim);max-width:980px;margin:10px 0 26px;font-size:14px}
+.grid{display:grid;gap:14px}.cols-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}.cols-2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:880px){.cols-4,.cols-2{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.stat .v{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:7px;letter-spacing:.5px}
+.stat .v small{font-size:13px;color:var(--ink-faint);font-weight:400}
+.lever{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}.lever:last-child{border-bottom:none}
+.lever .lk{flex:0 0 130px;font-family:var(--mono);font-size:12px;color:var(--ink)}
+.lever .lk .lv{display:block;color:var(--warm);font-size:13px;font-weight:600;margin-top:3px}
+.lever .ld{color:var(--ink-dim);font-size:13px}
+.panelhead{font-family:var(--serif);font-style:italic;font-size:24px;margin:36px 0 14px;color:var(--ink)}
+.spark{width:100%;height:64px;display:block}
+.t-sub{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+td .link{color:var(--cold);text-decoration:none;border-bottom:1px dotted rgba(79,157,201,.5)}
+td .link:hover{color:var(--warm);border-color:var(--warm)}
+.bucket{font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+.note{color:var(--ink-faint);font-size:12.5px;line-height:1.6;margin-top:10px}
+.empty{color:var(--ink-faint);font-family:var(--mono);font-size:12px;padding:20px;text-align:center}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--ink-faint);line-height:1.8}
+.warnbox{background:rgba(224,100,79,.06);border:1px solid rgba(224,100,79,.25);border-radius:10px;padding:13px 16px;color:#e0a59a;font-size:13px;margin:14px 0}
+/* per-trade expand */
+.exp{color:var(--ink-faint);cursor:pointer;user-select:none;transition:transform .15s,color .15s;display:inline-block}
+tr.clk:hover .exp{color:var(--warm)}
+tr.opened .exp{transform:rotate(90deg);color:var(--warm)}
+.detrow>td{background:var(--bg2);padding:0!important;border-bottom:1px solid var(--line)}
+.detbox{padding:16px 18px;position:sticky;left:0;max-width:980px;box-sizing:border-box;white-space:normal}
+.detbox .note,.detbox .kv,.detbox .tradebanner,.detbox .whynote{white-space:normal;overflow-wrap:anywhere;line-height:1.55}
+.tradebanner{font-family:var(--mono);font-size:12px;line-height:1.7;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.whynote{color:var(--ink-faint);font-size:12px;margin-top:6px;line-height:1.5}
+.modelbar{display:flex;align-items:center;gap:10px;margin:8px 0;font-family:var(--mono);font-size:12px}
+.modelbar .mn{flex:0 0 148px;color:var(--ink-dim);font-size:11px}
+.modelbar .track{flex:0 1 360px;min-width:160px;height:8px;background:var(--panel3);border-radius:4px;position:relative}
+.modelbar .dot{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--bg2)}
+.modelbar .mv{flex:0 0 52px;text-align:right;color:var(--ink)}
+.bktband{position:absolute;top:0;bottom:0;background:rgba(91,191,143,.16);border-left:1px solid rgba(91,191,143,.5);border-right:1px solid rgba(91,191,143,.5)}
+.pcols{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}@media(max-width:760px){.pcols{grid-template-columns:1fr}}
+.kv{font-family:var(--mono);font-size:12px;display:flex;flex-wrap:wrap;gap:2px 14px;padding:6px 0;border-bottom:1px dotted var(--line)}
+.kv:last-child{border-bottom:none}.kv b{color:var(--ink);flex:0 0 auto;margin-left:auto;white-space:nowrap}
+.kv .lab{color:var(--ink-dim);flex:1 1 55%;min-width:0;overflow-wrap:anywhere}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin:6px 0}
+.flow .step{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+.flow .ar{color:var(--ink-faint)}
+.probcompare{display:flex;gap:22px;margin-top:4px}.probgauge{flex:1}
+.probgauge .pl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+.probgauge .pv{font-family:var(--mono);font-size:24px;font-weight:600;margin:3px 0}
+.probbar{height:9px;border-radius:5px;background:var(--panel3);overflow:hidden}.probbar i{display:block;height:100%}
+.usedtag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--bg);background:var(--warm);border-radius:4px;padding:1px 5px;margin-left:6px;text-transform:uppercase;font-weight:600}
+.pricetitle{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+/* cost-band filter */
+.costbar{display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap;margin:2px 0 16px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.costbar .cblab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);align-self:center;margin-right:2px}
+.pills{display:flex;gap:8px;align-self:center}
+.pill{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.04em;padding:6px 13px;border-radius:20px;border:1px solid var(--line);background:var(--panel2);color:var(--ink-dim);cursor:pointer;transition:all .15s;user-select:none}
+.pill:hover{color:var(--ink);border-color:var(--ink-faint)}
+.pill.on{color:var(--bg);background:var(--warm);border-color:var(--warm)}
+.costlegend{font-family:var(--mono);font-size:11px;line-height:1.75;color:var(--ink-dim);flex:1 1 340px;min-width:280px}
+.costlegend b{color:var(--ink)}.costlegend .cc{color:var(--warm)}
+.mainnav{font-family:var(--mono);font-size:12px;margin:14px 0 0;display:flex;gap:16px;flex-wrap:wrap}
+.mainnav a{color:var(--ink-dim);text-decoration:none;padding:3px 0;border-bottom:1px solid transparent}
+.mainnav a:hover,.mainnav a.here{color:var(--warm);border-color:var(--warm)}
+.modelbar .mt{flex:1 1 200px;text-align:right;color:var(--ink-faint);font-size:10.5px;white-space:normal}
+.viewbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.viewbar .cblab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.costbar select{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 8px;margin-left:6px}
+.viewbar input{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 8px;width:110px}
+.viewbar input.num{width:72px}
+.viewbar label{font-family:var(--mono);font-size:11px;color:var(--ink-dim);display:flex;align-items:center;gap:6px}
+#banner:empty{display:none}
+#banner{margin:0 0 18px;display:flex;flex-wrap:wrap;gap:10px}
+#banner .bpill{font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:6px;border:1px solid var(--line);background:var(--bg2)}
+#banner .bpill.ok{border-color:#2b6;color:#2b6}#banner .bpill.warn{border-color:var(--warm);color:var(--warm)}
+#banner .bpill.bad{border-color:#c44;color:#c44}#banner .bpill b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="spine"></div>
+    <div class="brandrow">
+      <div><h1 id="title">The <span class="em">Desk</span></h1><div class="sub" id="subtitle"></div></div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <nav class="mainnav" id="mainnav"></nav>
+  </header>
+  <div id="banner"></div>
+  <div id="overview">
+    <div class="seclabel">Strategy scorecard · click a row for the deep dive</div>
+    <div id="costbar"></div>
+    <div id="erabar"></div>
+    <div id="facetbar"></div>
+    <div id="leadbar"></div>
+    <div class="tablewrap"><table id="ovtable"></table></div>
+    <div class="foot" id="foot"></div>
+  </div>
+  <div id="detail"></div>
+</div>
+<script>
+const SPEC = /*__DATA__*/null;
+const $=s=>document.querySelector(s);
+const money=v=>v==null?'—':(v>=0?'+$':'-$')+Math.abs(v).toFixed(2);
+const cls=v=>v==null?'neu':(v>1e-9?'pos':(v<-1e-9?'neg':'neu'));
+const pct=v=>v==null?'—':(v>=0?'+':'')+(+v).toFixed(1)+'%';
+const px=v=>v==null?'—':(+v).toFixed(3);
+const cents=v=>v==null?'—':(v>=0?'+':'')+(+v).toFixed(1)+'¢';
+const TZN=(SPEC.meta&&SPEC.meta.tz)||'UTC';  // display tz from the adapter (env DESK_TZ), default UTC
+const fmtts=ts=>ts?new Date(ts*1000).toLocaleString('en-GB',{timeZone:TZN,month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',',''):'—';
+const eBadge=e=>`<span class="badge b-${e}">${e}</span>`;
+const fBadge=f=>f?`<span class="badge b-${f}">${f}</span>`:'';
+
+function renderNav(){
+  const kind=(SPEC.meta||{}).source_kind||'';
+  const pages=[['/','← overview',''],['backtest.html','backtest','backtest'],
+    ['forward.html','forward','forward'],['live.html','live','live'],
+    ['opportunities.html','opportunities','opps'],['/ops','system','ops'],['index.html','classic','']];
+  $('#mainnav').innerHTML=pages.map(([h,l,k])=>`<a href="${h}" class="${k===kind?'here':''}">${l}</a>`).join('');
+}
+function renderHead(){
+  const m=SPEC.meta||{};
+  $('#title').innerHTML=m.title||'The <span class="em">Desk</span>';
+  $('#subtitle').textContent=m.subtitle||'';
+  $('#meta').innerHTML=`<div><b>${SPEC.strategies.length}</b> strategies${m.n_cycles?` · <b>${m.n_cycles}</b> cycles`:''}</div>
+    ${m.as_of?`<div>as of <b>${m.as_of}</b></div>`:''}${m.built?`<div>built <b>${m.built}</b></div>`:''}
+    ${m.cadence?`<div class="cadence" style="color:#8a8f98;font-size:11px;max-width:340px;text-align:right;margin-top:4px">${m.cadence}</div>`:''}`;
+  $('#foot').innerHTML=m.footnote||'';
+  const b=$('#banner'); if(b) b.innerHTML=m.banner||'';   // additive: live-page heartbeat/staleness/gate stamp (HTML) — empty otherwise
+}
+let SORT={key:'overall',dir:-1};
+function ovCols(){
+  const base=[
+    {k:'name',label:'Strategy',l:1,r:a=>`<span class="armname">${a.name}<span class="arrow">→</span></span>`},
+    {k:'exec',label:'Exec',l:1,r:a=>eBadge(a.exec)},
+    {k:'fair',label:'Fair',l:1,r:a=>fBadge(a.fair)},
+    {k:'edge',label:'Edge',r:a=>a.edge==null?'—':(a.edge*100).toFixed(0)+'¢'},
+    {k:'_leadlo',label:'Lead',r:a=>a.lead?a.lead[0]+'–'+a.lead[1]:'—'},
+  ];
+  const extra=((SPEC.meta&&SPEC.meta.extra_cols)||[]).map(c=>({k:c[0],label:c[1],l:1,r:a=>a[c[0]]==null?'—':a[c[0]]}));
+  const EMPTY_ERA='<span class="cc" title="strategy has no trades inside the selected era — full-period numbers are NOT shown here to avoid misattribution">— (0 trades in era)</span>';
+  const tail=[
+    {k:'trades_n',label:'Trades',r:a=>{return eraOn(a)?`${eraVal(a,'n')||0}`:`${a.trades_n}`;}},
+    {k:'win_pct',label:'Win%',r:a=>{if(eraOn(a)){const ew=eraVal(a,'win');return ew==null?'—':ew+'%';}const w=a.bands?bandVal(a,'win'):a.win_pct;return w==null?'—':w+'%';}},
+    {k:'realized',label:'Realized',r:a=>{if(eraOn(a)){const ev=eraVal(a,'total');return ev==null?EMPTY_ERA:`<span class="${cls(ev)}">${money(ev)}</span>`;}const v=a.bands?bandVal(a,'total'):a.realized;return `<span class="${cls(v)}">${money(v)}</span>`;}},
+    {k:'mtm',label:'MTM',r:a=>eraOn(a)&&ERA==='model'?'<span class="cc" title="MTM = current open-position value — not attributable to a closed fill-fidelity era">—</span>':`<span class="${cls(a.mtm)}">${money(a.mtm)}</span>`},
+    {k:'overall',label:'Overall',r:a=>{if(eraOn(a)){const ev=eraVal(a,'total');return ev==null?EMPTY_ERA:`<span class="${cls(ev)} big">${money(ev)}</span>`;}const t=a.bands?bandVal(a,'total'):null;const v=t==null?a.overall:Math.round((t+(a.mtm||0))*100)/100;return `<span class="${cls(v)} big">${money(v)}</span>`;}},
+    ...(SPEC.strategies.some(a=>a.return_pct!=null)?[{k:'return_pct',label:'Ret/Cap',r:a=>eraOn(a)?'<span class="cc" title="no per-era capital stats">—</span>':`<span class="${cls(a.return_pct)}">${pct(a.return_pct)}</span>`}]:[]),
+  ];
+  return base.concat(extra,tail);
+}
+function ovVal(a,k){ // sort by EXACTLY what the cell displays under the active era/band selection
+  if(k==='_leadlo')return a.lead?a.lead[0]:0;
+  if(k==='trades_n')return eraOn(a)?(eraVal(a,'n')||0):a.trades_n;
+  if(k==='win_pct'){if(eraOn(a))return eraVal(a,'win');return a.bands?bandVal(a,'win'):a.win_pct;}
+  if(k==='realized'){if(eraOn(a))return eraVal(a,'total');return a.bands?bandVal(a,'total'):a.realized;}
+  if(k==='overall'){if(eraOn(a))return eraVal(a,'total');const t=a.bands?bandVal(a,'total'):null;return t==null?a.overall:Math.round((t+(a.mtm||0))*100)/100;}
+  return a[k];
+}
+let COSTFILTER="adv";      // legacy _cost variant filter (older pages)
+let COSTBAND="base";       // cost-band SELECTOR: opt | base | adv — re-scores totals/win% + per-trade PnL
+const COST_BANDS=[
+  ["opt","Optimistic","Fill at mid — 0¢ spread, fee only."],
+  ["base","Base","Median real half-spread (varies by price, measured from captured book snapshots)."],
+  ["adv","Adverse","p90 real half-spread — the wide-book cost a thin entry can actually face."],
+];
+function hasCost(){return SPEC.strategies.some(s=>s._cost);}
+function hasBands(){return SPEC.strategies.some(s=>s.bands);}
+function bandVal(a,f){const b=a.bands&&a.bands[COSTBAND];return b?b[f]:null;}
+function renderCostBar(){
+  const el=$('#costbar'); if(!el) return;
+  if(hasBands()){
+    const pills=COST_BANDS.map(([k,lab])=>`<span class="pill${COSTBAND===k?' on':''}" data-cb="${k}">${lab}</span>`).join('');
+    const legend=COST_BANDS.map(([k,lab,d])=>`<div><b>${lab}</b>${k==='base'?' <span class="cc">(default)</span>':''} — ${d}</div>`).join('');
+    el.className='costbar';
+    el.innerHTML=`<span class="cblab">Cost band</span><div class="pills">${pills}</div><div class="costlegend">${legend}<div class="cc">Selecting a band re-scores every total, win-rate and per-trade PnL below.</div></div>`;
+    el.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{COSTBAND=p.dataset.cb;renderCostBar();renderOverview();refreshPerfCards();if(CURRENT_ARM)renderDynView(CURRENT_ARM);});
+    return;
+  }
+  if(!hasCost()){el.innerHTML='';return;}
+  const pills=COST_BANDS.map(([k,lab])=>`<span class="pill${COSTFILTER===k?' on':''}" data-cb="${k}">${lab}</span>`).join('');
+  const legend=COST_BANDS.map(([k,lab,d])=>`<div><b>${lab}</b> — ${d}</div>`).join('');
+  el.className='costbar';
+  el.innerHTML=`<span class="cblab">Exec cost</span><div class="pills">${pills}</div><div class="costlegend">${legend}</div>`;
+  el.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{COSTFILTER=p.dataset.cb;renderCostBar();renderOverview();});
+}
+/* ---- lead-band filter ---- */
+let LEADFILTER=null; // null = all lead bands
+const LEAD_BANDS=[
+  [null,"All"],["all","0–5"],["short1-2","1–2"],["mid2-3","2–3"],["long3-5","3–5"],
+];
+function leadBand(s){ // 3rd ·-segment; fallback to s.lead
+  if(s.name){const seg=s.name.split('·'); if(seg.length>=3)return seg[2];}
+  if(s.lead){const[lo,hi]=s.lead; if(lo===0&&hi===5)return'all'; if(lo===1&&hi===2)return'short1-2'; if(lo===2&&hi===3)return'mid2-3'; if(lo===3&&hi===5)return'long3-5';}
+  return null;
+}
+function hasLead(){return SPEC.strategies.some(s=>(s.name&&s.name.split('·').length>=3)||s.lead);}
+function renderLeadBar(){
+  const el=$('#leadbar'); if(el){el.innerHTML='';el.className='';}
+  return;
+  if(!hasLead()){el.innerHTML='';el.className='';return;}
+  const pills=LEAD_BANDS.map(([k,lab])=>`<span class="pill${LEADFILTER===k?' on':''}" data-lb="${k==null?'':k}">${lab}</span>`).join('');
+  el.className='costbar';
+  el.innerHTML=`<span class="cblab">Lead band</span><div class="pills">${pills}</div><div class="costlegend"><div>3–5d (long-lead) = lowest-temp markets, thin &amp; often untradeable — filter them out here.</div></div>`;
+  el.querySelectorAll('.pill').forEach(p=>p.onclick=()=>{LEADFILTER=p.dataset.lb||null;renderLeadBar();renderOverview();});
+}
+let ERA=null;   // null=all · 'model' (Apr1–Jun25, modeled fills) · 'hifi' (Jun26+, REAL captured books)
+function eraOn(a){return ERA!=null&&!!a.eras;}   // era selected AND strategy carries era stats — NEVER fall back to full-period numbers when on
+function eraVal(a,f){
+  if(!eraOn(a)) return null;
+  const e=a.eras[ERA]||{n:0}; const b=e[COSTBAND];  // NO ||e.base fallback: missing band = '—', not base-in-disguise
+  return f==='n'?(e.n||0):(b?b[f]:null);
+}
+function renderEraBar(){
+  // Era split (fill-fidelity cohorts) applies only when a backtest spans distinct data-fidelity
+  // periods; with a single continuous capture there is nothing to split — keep the bar empty.
+  const el=$('#erabar'); if(el){el.innerHTML='';el.className='';}
+}
+let FACETS={};   // facet key -> selected value (null = all)
+function renderFacetBar(){
+  const el=$('#facetbar'); if(!el) return;
+  const strats=SPEC.strategies.filter(s=>s.facets);
+  if(!strats.length){el.innerHTML='';el.className='';return;}
+  const keys={};
+  strats.forEach(s=>Object.entries(s.facets).forEach(([k,v])=>{(keys[k]=keys[k]||new Set()).add(v);}));
+  const DESC={engine:'pricing ensemble',threshold:'entry edge threshold',
+    bucket:'market segment shape: interior = two-sided band (e.g. 94\u201395\u00b0F, wins only inside it); open-ended = the edge segments (\u226596\u00b0F / \u226485\u00b0F). Open-ended is the only net-positive family in the ablation \u2014 every live/paper lane filters to it.',
+    cities:'market/universe-selection rule',exec:'execution style'};
+  const groups=Object.entries(keys).filter(([k,vs])=>vs.size>1).map(([k,vs])=>{
+    const opts=['<option value="">all</option>'].concat([...vs].sort().map(v=>
+      `<option value="${v}"${FACETS[k]===v?' selected':''}>${v}</option>`));
+    return `<label title="${DESC[k]||k}"><span class="cblab">${k}</span>
+      <select data-fk="${k}">${opts.join('')}</select></label>`;
+  });
+  el.className='costbar';
+  el.innerHTML=groups.join('')+`<span class="costlegend" style="flex-basis:100%;font-size:11px">Filter the scorecard by any combination of levers — e.g. bucket=open-ended + a market-selection rule shows only the matching cohorts. Rows show only strategies matching EVERY selected value.</span>`;
+  el.querySelectorAll('select[data-fk]').forEach(sel=>sel.onchange=()=>{
+    FACETS[sel.dataset.fk]=sel.value||null;renderOverview();});
+}
+function renderOverview(){
+  const cols=ovCols();
+  let pool=hasCost()?SPEC.strategies.filter(s=>s._cost===COSTFILTER):SPEC.strategies;
+  if(LEADFILTER!=null)pool=pool.filter(s=>leadBand(s)===LEADFILTER);
+  pool=pool.filter(s=>!s.facets||Object.entries(FACETS).every(([k,v])=>v==null||s.facets[k]===v));
+  const sorted=[...pool].sort((x,y)=>{
+    let xv=ovVal(x,SORT.key),yv=ovVal(y,SORT.key);
+    if(typeof xv==='string'||typeof yv==='string')return SORT.dir*((xv||'')+'').localeCompare((yv||'')+'');
+    return SORT.dir*((xv==null?-1e12:xv)-(yv==null?-1e12:yv));
+  });
+  const head=`<thead><tr>${cols.map(c=>`<th class="${c.l?'l ':''}sorth" data-k="${c.k}">${c.label}${SORT.key===c.k?(SORT.dir<0?' ▾':' ▴'):''}</th>`).join('')}</tr></thead>`;
+  const rows=sorted.map(a=>`<tr class="clk" data-arm="${encodeURIComponent(a.name)}"${a.href?` data-href="${a.href}"`:''}>${cols.map(c=>`<td class="${c.l?'l':''}">${c.r(a)}</td>`).join('')}</tr>`).join('');
+  $('#ovtable').innerHTML=head+`<tbody>${rows}</tbody>`;
+  document.querySelectorAll('#ovtable tr[data-arm]').forEach(tr=>tr.onclick=()=>{const h=tr.dataset.href; if(h){location.href=h;} else {showArm(decodeURIComponent(tr.dataset.arm));}});
+  document.querySelectorAll('#ovtable .sorth').forEach(th=>th.onclick=()=>{const k=th.dataset.k;SORT.dir=(SORT.key===k)?-SORT.dir:-1;SORT.key=k;renderOverview();});
+}
+function sparkline(vals,budget){
+  if(!vals||vals.length<2) return `<div class="empty">capital trail accrues over cycles</div>`;
+  const w=560,h=64,pad=4,max=budget||Math.max(...vals)||1;
+  const xs=i=>pad+i*(w-2*pad)/(vals.length-1),ys=v=>h-pad-(v/max)*(h-2*pad);
+  const pts=vals.map((v,i)=>`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+    <stop offset="0" stop-color="rgba(224,164,74,.30)"/><stop offset="1" stop-color="rgba(224,164,74,0)"/></linearGradient></defs>
+    <polygon points="${pad},${h-pad} ${pts} ${w-pad},${h-pad}" fill="url(#g1)"/>
+    <polyline points="${pts}" fill="none" stroke="var(--warm)" stroke-width="1.6"/></svg>`;
+}
+/* ---- per-trade pricing detail ---- */
+function tempScale(vals){const lo=Math.min(...vals)-2,hi=Math.max(...vals)+2;return {lo,hi,pos:v=>((v-lo)/(hi-lo))*100};}
+/* ---- execution ASSUMPTIONS: what data entered the trade + what cost/slippage was assumed ---- */
+function assumptionsCard(t){
+  const tier=t.fidelity_tier||null;
+  // plain-language label for HOW the fill price was obtained
+  const real=(tier==='T5'||tier==='T4'||tier==='T3');
+  const how=real
+    ? `<b class="pos">Filled by walking the REAL captured order book</b> (tier ${tier}) — the entry price is the exact volume-weighted cost of taking the recorded ladder. No spread is assumed; it's measured.`
+    : (tier
+       ? `<b class="warn">Mid price + MODELED spread/slippage</b> (tier ${tier}) — no real book was captured for this market at entry, so the fill is the market MID adjusted by the cost model's estimated half-spread &amp; slippage.`
+       : `Fill-cost basis not recorded for this trade.`);
+  const rows=[];
+  if(t.pnl_bands){
+    const sel=t.pnl_bands[COSTBAND];
+    rows.push([`PnL (selected band: ${COSTBAND})`,
+      `<b class="${cls(sel)}">${money(sel)}</b> <span class="t-sub">· opt ${money(t.pnl_bands.opt)} / base ${money(t.pnl_bands.base)} / adv ${money(t.pnl_bands.adv)}</span>`]);
+  }
+  if(t.cost_c){
+    if(real){
+      // T5/T4: the spread is MEASURED by walking the recorded ladder — bands (nearly) collapse; any
+      // residual base→adv difference is ONLY the temporal-slippage stress, not a spread assumption.
+      const extra=(t.cost_c.adv!=null&&t.cost_c.base!=null&&Math.abs(t.cost_c.adv-t.cost_c.base)>0.01)
+        ?` <span class="t-sub">(+${(t.cost_c.adv-t.cost_c.base).toFixed(2)}¢ temporal stress in the adverse band — no spread is assumed)</span>`:'';
+      rows.push(['Exec cost — MEASURED from the ladder', `${t.cost_c.base}¢/sh${extra}`]);
+    } else {
+      const selc=COSTBAND==='adv'?t.cost_c.adv:COSTBAND==='opt'?0:t.cost_c.base;
+      rows.push([`Assumed exec cost (${COSTBAND==='adv'?'adverse p90':COSTBAND==='opt'?'optimistic — mid fill':'base median'})`,
+        `<b>${selc}¢/sh</b> <span class="t-sub">· base ${t.cost_c.base}¢ / adv ${t.cost_c.adv}¢ (modeled spread+slippage vs mid)</span>`]);
+    }
+  }
+  if(t.leak_risk||((t.extras||{}).leak_risk)) rows.push(['Intraday leak risk',
+    '<span class="warn">yes</span> <span class="t-sub">— the input this entry priced on may not have been available at decision time (honest-subset flag; NOT a fill problem)</span>']);
+  if(tier!=null) rows.push(['Fill basis', real?`real ladder walk (${tier})`:`mid + modeled cost (${tier})`]);
+  if(t.cost_est_c!=null) rows.push(['Assumed exec cost', (+t.cost_est_c).toFixed(2)+'¢ / sh <span class="t-sub">(vs mid)</span>']);
+  if(t.slippage_bps_vs_mid!=null) rows.push(['Slippage vs mid', (+t.slippage_bps_vs_mid).toFixed(0)+' bps']);
+  if(t.fees!=null) rows.push(['Fees', '$'+(+t.fees).toFixed(4)]);
+  if(t.est_confidence) rows.push(['Cost-estimate confidence', t.est_confidence]);
+  if(t.degraded) rows.push(['Degraded', '<b class="neg">yes — filled below the recorded book tier</b>']);
+  const kvs=rows.map(([k,v])=>`<div class="kv"><span class="lab">${k}</span><b>${v}</b></div>`).join('');
+  const bandPills=t.pnl_bands?`<span style="float:right">${['opt','base','adv'].map(b=>`<span class="pill${COSTBAND===b?' on':''}" data-dband="${b}" style="padding:2px 9px;font-size:10px">${b}</span>`).join(' ')}</span>`:'';
+  return `<div class="card" style="margin-top:16px"><div class="pricetitle">Execution assumptions — how this fill was priced ${bandPills}</div>
+    <div class="note" style="margin-top:0;margin-bottom:10px">${how}</div>${kvs}
+    <div class="note">Sanity-check against the live market via the “open ↗” link on the trade row.</div></div>`;
+}
+function pricingDetail(t){
+  const d=t.decomp;
+  if(!d) return `<div class="detbox"><div class="empty">Pricing breakdown not captured for this trade
+     — logged before instrumentation, or the market resolved and was dropped by the data source.</div>
+     ${assumptionsCard(t)}</div>`;
+  const used=t.fair_model||'gauge';
+  const mvals=(d.models||[]).filter(m=>m.value_c!=null).map(m=>m.value_c);
+  const bnds=[d.bucket_lo,d.bucket_hi].filter(x=>x!=null);
+  const sc=tempScale(mvals.concat(d.central_c!=null?[d.central_c]:[],bnds).concat([0,30]).length?mvals.concat(d.central_c!=null?[d.central_c]:[],bnds):[0,30]);
+  const colT=v=>{const x=(v-sc.lo)/(sc.hi-sc.lo);return x<.4?'var(--cold)':x<.7?'var(--warm)':'var(--hot)';};
+  const band=(d.bucket_lo!=null&&d.bucket_hi!=null)?`<span class="bktband" style="left:${sc.pos(d.bucket_lo)}%;width:${sc.pos(d.bucket_hi)-sc.pos(d.bucket_lo)}%"></span>`:'';
+  const mstamp=m=>{ if(m.run_init) return m.run_init+(m.age_h!=null?` · ${m.age_h}h old`:'');
+    if(m.value_c==null) return m.reason||'value unavailable'; return m.nominal||''; };
+  const bars=(d.models||[]).map(m=>`<div class="modelbar"><span class="mn">${m.model}</span>
+    <span class="track">${band}<span class="dot" style="left:${m.value_c==null?0:sc.pos(m.value_c)}%;background:${m.value_c==null?'var(--ink-faint)':colT(m.value_c)}"></span></span>
+    <span class="mv">${m.value_c==null?'n/a':m.value_c+'°'}</span><span class="mt">${mstamp(m)}</span></div>`).join('');
+  const central=`<div class="modelbar" style="border-top:1px dashed var(--line);padding-top:9px;margin-top:6px">
+    <span class="mn" style="color:var(--warm)">CENTRAL (${d.central_method||'mean'})</span>
+    <span class="track">${band}<span class="dot" style="left:${d.central_c==null?0:sc.pos(d.central_c)}%;background:var(--warm);width:13px;height:13px"></span></span>
+    <span class="mv" style="color:var(--warm)">${d.central_c==null?'n/a':d.central_c+'°'}</span><span class="mt"></span></div>`;
+  // model-specific fair from the decomp; for the model the arm USED, fall back to the trade's true entry fair
+  // (backfilled decomps recompute at build time and may miss it; natively-logged trades already match).
+  const gfair=(used==='gauge'&&(d.gauge&&d.gauge.fair==null)&&t.fair!=null)?t.fair:(d.gauge?d.gauge.fair:null);
+  const bfair=(used==='gbt'&&(d.gbt&&d.gbt.fair==null)&&t.fair!=null)?t.fair:(d.gbt?d.gbt.fair:null);
+  const gauge=d.gauge?`<div class="card">
+     <div class="pricetitle">Gauge calibration · ${d.gauge.dist||'empirical'}${(used==='gauge'||used==='blend')?'<span class="usedtag">used</span>':''}</div>
+     <div class="kv"><span class="lab">bias offset</span><b>${d.gauge.offset==null?'—':d.gauge.offset+'°'}</b></div>
+     <div class="kv"><span class="lab">residual σ</span><b>${d.gauge.sigma==null?'—':d.gauge.sigma+'°'}</b></div>
+     <div class="kv"><span class="lab">error samples (rolling 30d)</span><b>${d.gauge.n_errors}</b></div>
+     <div class="kv"><span class="lab">fair P(bucket)</span><b style="color:#9bbf6f">${gfair==null?'—':(gfair*100).toFixed(1)+'%'}</b></div>
+     <div class="note">μ = central − offset = ${d.central_c}° − (${d.gauge.offset}°) = <b>${d.central_c!=null&&d.gauge.offset!=null?(d.central_c-d.gauge.offset).toFixed(2)+'°':'—'}</b>.
+       Fair = fraction of the de-biased model's empirical error distribution (${d.gauge.n_errors} settled samples,
+       model−actual) that lands inside the bucket ${d.bucket_lo}°–${d.bucket_hi}°.</div></div>`:'';
+  const gbtRelevant=d.gbt&&(used==='gbt'||d.gbt.fair!=null);
+  const gbt=gbtRelevant?`<div class="card">
+     <div class="pricetitle">GBT classifier${used==='gbt'?'<span class="usedtag">used</span>':''}</div>
+     <div class="kv"><span class="lab">central feature</span><b>${d.gbt.central_c==null?'—':d.gbt.central_c+'°'}</b></div>
+     <div class="kv"><span class="lab">fair P(bucket)</span><b style="color:#d98fb0">${bfair==null?'—':(bfair*100).toFixed(1)+'%'}</b></div>
+     <div class="note">Gradient-boosted tree → P(bucket) via <span class="mono">predict_proba</span> on features:
+       lead, calendar features, central estimate (${d.gbt.central_c}°), bucket edges, rolling bias &amp; σ
+       over a trailing window, and a Gaussian-baseline P.</div></div>`:'';
+  const fair=used==='gbt'?bfair:gfair;
+  const fairPct=fair==null?null:fair*100, midPct=t.mid_entry==null?null:t.mid_entry*100;
+  const edge=(fairPct!=null&&midPct!=null)?(midPct-fairPct):null;
+  const decided=edge==null?'':(Math.abs(edge)>=((SPEC._edge_cents&&SPEC._edge_cents[t._arm])||0)?
+     `|edge| ${Math.abs(edge).toFixed(1)}¢ ≥ threshold → <b class="${t.side==='SELL'?'neg':'pos'}">${t.side}</b> (${edge>0?'market too HIGH vs fair':'market too LOW vs fair'})`:'below threshold');
+  const blab=(d.bucket_lo==null&&d.bucket_hi==null)?'any':(d.bucket_lo==null?`≤ ${d.bucket_hi}°C`:(d.bucket_hi==null?`≥ ${d.bucket_lo}°C`:`${d.bucket_lo}–${d.bucket_hi}°C`));
+  const mword=d.metric||'outcome';
+  const action=t.side==='SELL'?'SOLD — betting the outcome will NOT land in this band':'BOUGHT — betting it WILL';
+  const bandPnl=t.pnl_bands?t.pnl_bands[COSTBAND]:t.realized;
+  const outcome=t.status==='closed'?(bandPnl==null?`<span class="neu">settled · no ${COSTBAND} scoring for this trade</span>`:(bandPnl>=0?`<span class="pos">✓ correct · ${COSTBAND} +$${(+bandPnl).toFixed(2)}</span>`:`<span class="neg">✗ wrong · ${COSTBAND} −$${Math.abs(bandPnl).toFixed(2)}</span>`)):(t.status==='resting'?'resting (unfilled)':'open (unsettled)');
+  const extreme=(fairPct!=null&&(fairPct<2||fairPct>98))?`<div class="whynote">Fair ≈ <b>${fairPct.toFixed(1)}%</b> because the model central <b>${d.central_c}°</b> is ${(d.central_c!=null&&d.bucket_hi!=null&&d.central_c>d.bucket_hi)?'well ABOVE':(d.central_c!=null&&d.bucket_lo!=null&&d.central_c<d.bucket_lo)?'well BELOW':'outside'} this band (${blab}) → almost no chance the outcome lands here, yet the market priced it ${midPct.toFixed(1)}% — so we ${t.side==='SELL'?'SOLD':'BOUGHT'} the mispricing.</div>`:'';
+  const banner=`<div class="tradebanner"><b class="${t.side==='SELL'?'neg':'pos'}">${t.side}</b> · ${action}<br>
+    <b>${t.city?t.city+' · ':''}${mword} ${blab}</b> · qty ${Math.abs(t.qty)} @ entry <b>${px(t.entry_px)}</b>
+    · our fair <b style="color:var(--warm)">${fairPct==null?'—':fairPct.toFixed(1)+'%'}</b> vs market <b style="color:var(--cold)">${midPct==null?'—':midPct.toFixed(1)+'%'}</b>
+    · edge <b class="${cls(edge)}">${cents(edge)}</b> · ${outcome}${extreme}</div>`;
+  return `<div class="detbox">${banner}
+    <div class="card"><div class="pricetitle">Ensemble estimate · ${mword} · bucket ${blab}</div>
+      ${bars}${central}
+      <div class="note">Each component model's as-of estimate for the target; the green band is the market's
+        outcome bucket. Central = ${d.central_method||'mean'} of the models (authoritative blend).</div></div>
+    <div class="grid cols-2" style="margin-top:16px">${used==='gbt'?gbt+gauge:gauge+gbt}</div>
+    <div class="card" style="margin-top:16px"><div class="pricetitle">Fair vs market — how the edge &amp; side were set</div>
+      <div class="probcompare">
+        <div class="probgauge"><div class="pl">Our fair (${used})</div><div class="pv" style="color:var(--warm)">${fairPct==null?'—':fairPct.toFixed(1)+'%'}</div>
+          <div class="probbar"><i style="width:${fairPct||0}%;background:var(--warm)"></i></div></div>
+        <div class="probgauge"><div class="pl">Market mid @ entry</div><div class="pv" style="color:var(--cold)">${midPct==null?'—':midPct.toFixed(1)+'%'}</div>
+          <div class="probbar"><i style="width:${midPct||0}%;background:var(--cold)"></i></div></div>
+        <div class="probgauge"><div class="pl">Edge = mid − fair</div><div class="pv ${cls(edge)}">${cents(edge)}</div>
+          <div class="note" style="margin-top:4px">${decided}</div></div>
+      </div></div>
+    ${assumptionsCard(t)}
+  </div>`;
+}
+function tradesTable(trades,armName,isMaker){
+  const ord={open:0,resting:1,closed:2};
+  const ts=[...trades].sort((x,y)=>(ord[x.status]-ord[y.status])||((y.entry_ts||0)-(x.entry_ts||0)));
+  if(!ts.length) return `<div class="card"><div class="empty">No trades yet.</div></div>`;
+  const head=`<thead><tr><th class="l"></th><th class="l">St</th><th class="l">Side</th><th>Qty</th><th>Entry</th>
+    <th>Fair</th>${isMaker?'<th>Queue</th>':''}<th>PnL</th><th>Lead</th>
+    <th class="l">City</th><th class="l">Target</th><th class="l">Entered</th><th class="l">Mkt</th></tr></thead>`;
+  CURRENT_TRADES=ts;
+  const rows=ts.map((t,i)=>{
+    t._arm=armName;
+    // band-missing ≠ band-zero: pnl_bands present but lacking the selected band renders '—' (labeled),
+    // NOT the base realized number in disguise; realized fallback only for pre-instrumentation rows
+    const noBand=t.status==='closed'&&t.pnl_bands&&t.pnl_bands[COSTBAND]==null;
+    const pnl=t.status==='closed'?(t.pnl_bands?t.pnl_bands[COSTBAND]:t.realized):t.unrealized;
+    const lab=t.status==='closed'?(noBand?'':'realized'):(t.status==='resting'?'':'unreal');
+    const hasD=t.decomp?'<span class="exp">▸</span>':'<span class="t-sub">·</span>';
+    const mtmNote=(t.status==='open'&&pnl==null)?'<span class="t-sub" title="no live book">n/a</span>':null;
+    const main=`<tr class="clk trow" data-i="${i}"><td class="l">${hasD}</td>
+      <td class="l"><span class="badge b-${t.status}">${t.status==='closed'?'set':t.status}</span></td>
+      <td class="l ${t.side==='BUY'?'pos':'neg'}">${t.side}</td><td>${Math.abs(t.qty)}</td>
+      <td>${px(t.entry_px)}</td><td style="color:var(--warm)">${px(t.fair)}</td>${isMaker?`<td>${t.status==='resting'?(t.queue_ahead??'—'):'—'}</td>`:''}
+      <td class="${cls(pnl)}">${t.status==='resting'?'<span class="neu">resting</span>':(noBand?`<span class="t-sub" title="no ${COSTBAND} scoring for this trade">—</span>`:(mtmNote||money(pnl)))}${lab&&!mtmNote?`<div class="t-sub">${lab}</div>`:''}</td>
+      <td>${t.lead??'—'}</td><td class="l">${t.city||'—'}</td><td class="l t-sub">${t.target_date||'—'}</td>
+      <td class="l t-sub">${fmtts(t.entry_ts)}</td>
+      <td class="l">${t.url?`<a class="link" href="${t.url}" target="_blank" rel="noopener">↗</a>`:'<span class="t-sub" title="no market link — slug not recovered at log time">—</span>'}</td></tr>`;
+    const det=`<tr class="detrow" data-det="${i}" style="display:none"><td colspan="${isMaker?13:12}">${pricingDetail(t)}</td></tr>`;
+    return main+det;
+  }).join('');
+  return `<div class="tablewrap"><table class="ttab">${head}<tbody>${rows}</tbody></table></div>`;
+}
+function runsTable(a){
+  if(!a.runs||!a.runs.length) return tradesTable(a.trades||[],a.name,a.is_maker);
+  const head=`<thead><tr><th class="l"></th><th class="l">Run</th><th class="l">Window</th><th>Trades</th>
+    <th>Win%</th><th>Realized</th><th>MTM</th><th>Overall</th><th>Ret/Cap</th></tr></thead>`;
+  const rows=a.runs.map((r,i)=>{
+    const main=`<tr class="clk rrow" data-r="${i}"><td class="l"><span class="exp">▸</span></td>
+      <td class="l"><span class="armname" style="font-size:13px">${r.name}</span></td>
+      <td class="l t-sub">${r.start}→${r.end}</td>
+      <td>${r.trades_n}</td><td>${r.win_pct==null?'—':r.win_pct+'%'}</td>
+      <td class="${cls(r.realized)}">${money(r.realized)}</td><td class="${cls(r.mtm)}">${money(r.mtm)}</td>
+      <td class="${cls(r.overall)} big">${money(r.overall)}</td><td class="${cls(r.return_pct)}">${pct(r.return_pct)}</td></tr>`;
+    const det=`<tr class="rdetrow" data-rdet="${i}" style="display:none"><td colspan="9" style="padding:0!important;background:var(--bg2)">
+      <div class="rtrades" data-rt="${i}" style="padding:14px"></div></td></tr>`;
+    return main+det;
+  }).join('');
+  return `<div class="tablewrap"><table>${head}<tbody>${rows}</tbody></table></div>`;
+}
+function wireTrades(scope){
+  scope.querySelectorAll('.trow').forEach(tr=>tr.onclick=()=>{
+    const i=tr.dataset.i, det=scope.querySelector(`.detrow[data-det="${i}"]`);
+    const show=det.style.display==='none'; det.style.display=show?'table-row':'none'; tr.classList.toggle('opened',show);
+    if(show) wireDetBand(det);
+  });
+}
+function wireDetBand(det){
+  det.querySelectorAll('.pill[data-dband]').forEach(p=>p.onclick=(ev)=>{
+    ev.stopPropagation();
+    COSTBAND=p.dataset.dband;renderCostBar();renderOverview();refreshPerfCards();
+    // re-score EVERYTHING visible with the new band: this trades table (PnL column), the reopened
+    // detail row, the headline cards, and the dyn views — no two panels may disagree on the band
+    const i=det.dataset.det, tw=det.closest('.tablewrap'), scope=tw&&tw.parentElement;
+    if(tw&&scope&&CURRENT_TRADES){
+      const trades=CURRENT_TRADES, arm=trades[0]&&trades[0]._arm;
+      const sa=SPEC.strategies.find(x=>x.name===arm);
+      tw.outerHTML=tradesTable(trades,arm,sa&&sa.is_maker);
+      wireTrades(scope);
+      const nd=scope.querySelector(`.detrow[data-det="${i}"]`), ntr=scope.querySelector(`.trow[data-i="${i}"]`);
+      if(nd){nd.style.display='table-row';wireDetBand(nd);} if(ntr)ntr.classList.add('opened');
+    } else {
+      const t=CURRENT_TRADES&&CURRENT_TRADES[i];
+      if(t){det.firstElementChild.innerHTML=pricingDetail(t);wireDetBand(det);}
+    }
+    if(CURRENT_ARM&&$('#detail')&&$('#detail').style.display==='block'&&document.querySelector('#dynview'))renderDynView(CURRENT_ARM);
+  });
+}
+let CURRENT_TRADES=null;
+let CURRENT_ARM=null;
+/* ── dynamic backtest views: per-trade stats vs rolling trading windows (W1) ─────────────
+   Data = slim per-trade records fetched from the mini server (/api/trades/<run_id>) — the run-dir
+   jsonl is the database. Falls back to the embedded (capped) trades when the API is unreachable
+   (file:// snapshot) with an explicit warning, so numbers are never silently wrong. */
+const VSTATE={};   // per-arm {view,len,maxQty,maxCap,from,to,slim,partial}
+function vstate(a){
+  if(!VSTATE[a.name]){
+    VSTATE[a.name]={view:'trades',len:2,size:null,maxCap:100,from:null,to:null,slim:null,partial:false};
+  }
+  return VSTATE[a.name];
+}
+async function fetchSlim(a){
+  const st=vstate(a);
+  if(st.slim) return st.slim;
+  try{
+    const r=await fetch(`/api/trades/${encodeURIComponent(a.name)}`);
+    if(r.ok){const j=await r.json(); st.slim=j.trades||[]; st.partial=false; return st.slim;}
+  }catch(e){}
+  st.slim=(a.trades||[]).filter(t=>t.status!=='resting').map(t=>({
+    d:(t.entry_ts?new Date(t.entry_ts*1000).toISOString().slice(0,10):''), ts:t.entry_ts||0,
+    side:t.side, px:t.entry_px, qty:Math.abs(t.qty||0), pnl:(t.status==='closed'?t.realized:null),
+    pb:(t.status==='closed'?t.pnl_bands:null)||null,
+    sd:t.target_date||'', cap:Math.round(Math.abs(t.qty||0)*(t.side==='BUY'?(t.entry_px||0):(1-(t.entry_px||0)))*1e4)/1e4}));
+  st.partial=true;   // embedded subset (page caps rows) — stats labeled partial
+  return st.slim;
+}
+// dyn stats obey the active cost band (pb per-band pnl when the source carries it); base 'pnl' only
+// as the pre-instrumentation fallback — otherwise the table above and the stats below would disagree
+function bandSlim(recs){return recs.map(t=>({...t,pnl:(t.pb&&t.pb[COSTBAND]!==undefined)?t.pb[COSTBAND]:t.pnl}));}
+function inRange(t,st){return (!st.from||t.d>=st.from)&&(!st.to||t.d<=st.to);}
+function applyCaps(recs,st){
+  // chronological replay: every trade RESIZED to st.size shares (pnl & collateral scale linearly —
+  // user: a size-per-trade input, not a cap), entries skipped once open collateral would exceed
+  // maxCap; a position frees its collateral on its settle date.
+  const out=[];let skipped=0;
+  let open=[];      // [{endTs,cap}]
+  const sorted=[...recs].sort((x,y)=>x.ts-y.ts);
+  for(const t of sorted){
+    const scale=(st.size&&t.qty)?st.size/t.qty:1;
+    const cap=t.cap*scale;
+    const endTs=t.sd?Date.parse(t.sd+'T23:59:59Z')/1000:t.ts+86400;
+    open=open.filter(o=>o.endTs>t.ts);
+    const openCap=open.reduce((s,o)=>s+o.cap,0);
+    if(st.maxCap&&openCap+cap>st.maxCap){skipped++;continue;}
+    open.push({endTs,cap});
+    out.push({...t,qty:st.size||t.qty,cap,pnl:t.pnl==null?null:t.pnl*scale,peakAt:openCap+cap});
+  }
+  const peak=out.reduce((m,t)=>Math.max(m,t.peakAt),0);
+  return {taken:out,skipped,peak};
+}
+function tradeStats(recs){
+  const settled=recs.filter(t=>t.pnl!=null);
+  const wins=settled.filter(t=>t.pnl>0).length;
+  const days=new Set(recs.map(t=>t.d)).size||1;
+  const tot=settled.reduce((s,t)=>s+t.pnl,0);
+  return {n:recs.length,settled:settled.length,
+    win:settled.length?Math.round(1000*wins/settled.length)/10:null,
+    avgPnl:settled.length?Math.round(tot/settled.length*1e4)/1e4:null,
+    avgQty:recs.length?Math.round(recs.reduce((s,t)=>s+t.qty,0)/recs.length*100)/100:null,
+    perDay:Math.round(recs.length/days*100)/100, total:Math.round(tot*100)/100};
+}
+function windowRows(recs,st){
+  if(!recs.length) return {rows:[],agg:{}};
+  const days=[...new Set(recs.map(t=>t.d))].sort();
+  const d0=st.from||days[0], d1=st.to||days[days.length-1];
+  const rows=[];const addD=(d,n)=>{const x=new Date(d+'T00:00:00Z');x.setUTCDate(x.getUTCDate()+n);return x.toISOString().slice(0,10);};
+  for(let d=d0;d<=d1;d=addD(d,1)){
+    const dEnd=addD(d,st.len-1);
+    const inW=recs.filter(t=>t.d>=d&&t.d<=dEnd);
+    if(!inW.length){rows.push({d,dEnd,n:0,skipped:0,pnl:null,peak:0,util:null,trades:[]});continue;}
+    const {taken,skipped,peak}=applyCaps(inW,st);
+    const settled=taken.filter(t=>t.pnl!=null);
+    const pnl=settled.length?Math.round(settled.reduce((s,t)=>s+t.pnl,0)*100)/100:null;
+    rows.push({d,dEnd,n:taken.length,skipped,pnl,peak:Math.round(peak*100)/100,
+      util:st.maxCap?Math.round(1000*peak/st.maxCap)/10:null,trades:taken});
+  }
+  const withPnl=rows.filter(r=>r.pnl!=null);
+  // max drawdown + range total: from the SAME cap-replay as the window rows (skipped entries excluded)
+  // — a $20 max-capital that skips 14 trades must not have those trades' PnL in the totals above it.
+  const {taken:rangeTaken}=applyCaps(recs,st);
+  const settled=rangeTaken.filter(t=>t.pnl!=null).sort((x,y)=>(x.sd||'').localeCompare(y.sd||''));
+  let cum=0,peakC=0,maxDD=0;
+  for(const t of settled){cum+=t.pnl;peakC=Math.max(peakC,cum);maxDD=Math.max(maxDD,peakC-cum);}
+  const agg={n:rows.length,maxDD:Math.round(maxDD*100)/100,finalPnl:Math.round(cum*100)/100,
+    avgPnl:withPnl.length?Math.round(withPnl.reduce((s,r)=>s+r.pnl,0)/withPnl.length*100)/100:null,
+    posPct:withPnl.length?Math.round(1000*withPnl.filter(r=>r.pnl>0).length/withPnl.length)/10:null,
+    avgPeak:withPnl.length?Math.round(withPnl.reduce((s,r)=>s+r.peak,0)/withPnl.length*100)/100:null,
+    avgUtil:withPnl.length&&rows[0].util!=null?Math.round(withPnl.reduce((s,r)=>s+(r.util||0),0)/withPnl.length*10)/10:null,
+    skipped:rows.reduce((s,r)=>s+r.skipped,0)};
+  return {rows,agg};
+}
+function viewControls(a){
+  const st=vstate(a);
+  const pill=(k,lab,on)=>`<span class="pill${on?' on':''}" data-v="${k}">${lab}</span>`;
+  const lens=[1,2,3,5].map(l=>`<span class="pill${st.len===l?' on':''}" data-len="${l}">${l}d</span>`).join('');
+  return `<div class="viewbar" id="viewbar">
+    <span class="cblab">View</span>
+    <div class="pills">${pill('trades','Per-trade',st.view==='trades')}${pill('windows','Trading windows',st.view==='windows')}</div>
+    <label>from <input type="date" id="vfrom" value="${st.from||''}"></label>
+    <label>to <input type="date" id="vto" value="${st.to||''}"></label>
+    ${st.view==='windows'?`<span class="cblab">window</span><div class="pills">${lens}</div>
+    <label>size/trade <input class="num" type="number" id="vqty" value="${st.size||''}" placeholder="as traded" min="0.1" step="0.1"></label>
+    <label>max capital $<input class="num" type="number" id="vcap" value="${st.maxCap}" min="1"></label>`:''}
+  </div>`;
+}
+async function renderDynView(a){
+  const st=vstate(a);
+  const box=$('#dynview'); if(!box) return;
+  const tp=$('#tradespanel'); if(tp) tp.style.display=(st.view==='windows')?'none':'block';
+  box.innerHTML='<div class="empty">loading trade data…</div>';
+  const slim=bandSlim((await fetchSlim(a)).filter(t=>inRange(t,st)));
+  const partial=st.partial?`<div class="warnbox">Static snapshot — stats below cover only the ${slim.length} embedded trades.
+    Open via the mini server (<span class="mono">http://localhost:8788</span>) for the FULL trade database.</div>`:'';
+  // range applies to the dyn stats below AND the trades table (ALWAYS rebuilt — clearing the range
+  // must restore the full table, not leave it stuck on the old filter). Headline cards stay
+  // full-period; the scope label under them says so.
+  const tpanel=$('#tradespanel');
+  if(tpanel){
+    const ranged=st.from||st.to;
+    const fr=ranged?(a.trades||[]).filter(t=>{const d=t.entry_ts?new Date(t.entry_ts*1000).toISOString().slice(0,10):'';
+      return (!st.from||d>=st.from)&&(!st.to||d<=st.to);}):(a.trades||[]);
+    const tt=tpanel.querySelector('.tablewrap'); if(tt){tt.outerHTML=tradesTable(fr,a.name,a.is_maker);wireTrades(tpanel);}
+    const ph=tpanel.querySelector('.panelhead .t-sub');
+    if(ph)ph.textContent=ranged?`· ${fr.length} in range (of ${(a.trades||[]).length} embedded) · click a row for its pricing`
+      :`· ${a.trades_n??(a.trades||[]).length} total${a.trades_n&&(a.trades||[]).length<a.trades_n?` (newest ${(a.trades||[]).length} embedded)`:''} · click any row to expand its full pricing breakdown`;
+  }
+  if(st.view==='trades'){
+    const {taken}=applyCaps(slim,{size:null,maxCap:0});
+    const t=tradeStats(taken);
+    box.innerHTML=partial+`<div class="grid cols-4" style="margin:14px 0">
+      <div class="card stat"><div class="k">Trades (selected range)</div><div class="v">${t.n} <small>${t.settled} settled</small></div></div>
+      <div class="card stat"><div class="k">Win rate</div><div class="v">${t.win==null?'—':t.win+'%'}</div></div>
+      <div class="card stat"><div class="k">Avg PnL / trade</div><div class="v ${cls(t.avgPnl)}">${t.avgPnl==null?'—':(t.avgPnl>=0?'+$':'-$')+Math.abs(t.avgPnl).toFixed(3)}</div></div>
+      <div class="card stat"><div class="k">Avg size · trades/day</div><div class="v">${t.avgQty??'—'} <small>· ${t.perDay}/d</small></div></div>
+    </div><div class="note">Total PnL over range (<b>${COSTBAND}</b> band): <b class="${cls(t.total)}">${money(t.total)}</b>. Per-trade statistics only — capital metrics live in the Trading-windows view.</div>`;
+  } else {
+    const {rows,agg}=windowRows(slim,st);
+    const rhtml=rows.filter(r=>r.n>0||r.pnl!=null).map((r,i)=>`<tr class="clk wrow" data-w="${i}">
+      <td class="l"><span class="exp">▸</span></td><td class="l">${r.d} → ${r.dEnd}</td>
+      <td>${r.n}${r.skipped?` <span class="warn">(+${r.skipped} skipped)</span>`:''}</td>
+      <td class="${cls(r.pnl)}">${r.pnl==null?'—':money(r.pnl)}</td>
+      <td>$${r.peak}</td><td>${r.util==null?'—':r.util+'%'}</td></tr>
+      <tr class="wdet" data-wd="${i}" style="display:none"><td colspan="6" style="background:var(--bg2);padding:0!important">
+        <div class="wtrades" data-wt="${i}" style="padding:10px 14px"></div></td></tr>`).join('');
+    box.innerHTML=partial+`<div class="grid cols-4" style="margin:14px 0">
+      <div class="card stat"><div class="k">Rolling ${st.len}-day windows</div><div class="v">${agg.n??0}</div></div>
+      <div class="card stat"><div class="k">Avg window PnL</div><div class="v ${cls(agg.avgPnl)}">${agg.avgPnl==null?'—':money(agg.avgPnl)}</div></div>
+      <div class="card stat"><div class="k">Windows positive</div><div class="v">${agg.posPct==null?'—':agg.posPct+'%'}</div></div>
+      <div class="card stat"><div class="k">Avg peak capital · util</div><div class="v">$${agg.avgPeak??'—'} <small>· ${agg.avgUtil==null?'—':agg.avgUtil+'%'}</small></div></div>
+      <div class="card stat"><div class="k">Max drawdown <small>(cum. settled PnL)</small></div><div class="v neg">−$${agg.maxDD??'—'}</div></div>
+      <div class="card stat"><div class="k">Range total (this size · ${COSTBAND})</div><div class="v ${cls(agg.finalPnl)}">${money(agg.finalPnl)}</div></div>
+    </div>
+    ${agg.skipped?`<div class="note">⚠ ${agg.skipped} trade entries skipped across windows because open collateral would exceed max capital $${st.maxCap}.</div>`:''}
+    <div class="tablewrap"><table><thead><tr><th class="l"></th><th class="l">Window (entered within)</th>
+      <th>Trades</th><th>PnL</th><th>Peak cap</th><th>Utilization</th></tr></thead><tbody>${rhtml}</tbody></table></div>
+    <div class="note">Windows roll daily; a window owns the trades ENTERED inside it (settlement may land later —
+      your design). PnL sums those trades' settled results. Click a window for its trades.</div>`;
+    const vRows=rows.filter(r=>r.n>0||r.pnl!=null);
+    box.querySelectorAll('.wrow').forEach(tr=>tr.onclick=()=>{
+      const i=tr.dataset.w,det=box.querySelector(`.wdet[data-wd="${i}"]`),
+            cont=box.querySelector(`.wtrades[data-wt="${i}"]`);
+      const show=det.style.display==='none';
+      if(show&&!cont.dataset.built){
+        // FULL per-trade layout inside the window (same table + pricing decomp as the per-trade view):
+        // join the window's slim records back to the embedded full trades by entry date.
+        const w=vRows[i];
+        // join by the taken entries' EXACT ts — not by date alone (date-join pulled in resting rows,
+        // out-of-range trades past st.to, and entries the max-capital replay skipped)
+        const takenTs=new Set(w.trades.map(t=>t.ts));
+        const full=(a.trades||[]).filter(t=>t.status!=='resting'&&t.entry_ts&&takenTs.has(t.entry_ts));
+        if(full.length){
+          const excl=w.n-full.length;
+          cont.innerHTML=((w.skipped?`<div class="note">⚠ ${w.skipped} entries skipped by the max-capital replay are excluded here (and from the row's PnL).</div>`:'')
+            +(excl>0?`<div class="note">showing ${full.length} of ${w.n} window trades with full detail (embed cap); the rest are in the run-dir jsonl.</div>`:''))
+            +tradesTable(full,a.name,a.is_maker);
+          wireTrades(cont);
+        } else {
+          cont.innerHTML='<div class="note">Full pricing detail is embedded for the newest 400 trades only — this window predates the embed; summary lines below (full data: run-dir jsonl / per-trade view with a date filter).</div>'
+            +(w.trades.map(t=>`<div class="kv"><span class="lab">${t.d} · ${t.side} ${t.qty} @ ${px(t.px)} → settles ${t.sd}</span>
+            <b class="${cls(t.pnl)}">${t.pnl==null?'open':money(t.pnl)}</b></div>`).join('')||'<div class="empty">no trades</div>');
+        }
+        cont.dataset.built='1';
+      }
+      det.style.display=show?'table-row':'none';tr.classList.toggle('opened',show);});
+  }
+  // (re)wire controls
+  const vb=$('#viewbar');
+  vb.querySelectorAll('.pill[data-v]').forEach(p=>p.onclick=()=>{st.view=p.dataset.v;redrawDyn(a);});
+  vb.querySelectorAll('.pill[data-len]').forEach(p=>p.onclick=()=>{st.len=+p.dataset.len;redrawDyn(a);});
+  const wire=(id,k)=>{const el=vb.querySelector(id);if(el)el.onchange=()=>{st[k]=el.type==='number'?(+el.value||st[k]):(el.value||null);redrawDyn(a);};};
+  wire('#vfrom','from');wire('#vto','to');wire('#vcap','maxCap');
+  const vq=vb.querySelector('#vqty');
+  if(vq)vq.onchange=()=>{st.size=vq.value?+vq.value:null;redrawDyn(a);};
+}
+function redrawDyn(a){const host=$('#dyncontrols');if(host)host.innerHTML=viewControls(a);renderDynView(a);}
+function perfCards(a){
+  // cards scored EXACTLY like the overview row (era/band selection) — never full-period-in-disguise
+  const isMaker=a.is_maker, isBT=(SPEC.meta&&SPEC.meta.source_kind)==='backtest';
+  const selN=eraOn(a)?(eraVal(a,'n')||0):a.trades_n;
+  const selWin=eraOn(a)?eraVal(a,'win'):(a.bands?bandVal(a,'win'):a.win_pct);
+  const selTot=eraOn(a)?eraVal(a,'total'):(a.bands?bandVal(a,'total'):a.realized);
+  const selOv=eraOn(a)?eraVal(a,'total'):(a.bands&&bandVal(a,'total')!=null?Math.round((bandVal(a,'total')+(a.mtm||0))*100)/100:a.overall);
+  const scopeLab=`cards scored: <b>${ERA==null?'full period':'selected era'}</b>${(a.bands||a.eras)?` · <b>${COSTBAND}</b> cost band`:''} — the era/band pills re-score these; the trades table below always shows the full period; the date range applies only to the views under it`;
+  const makerStats=isMaker?`
+    <div class="card stat"><div class="k">Maker fill rate</div><div class="v ${cls(a.maker_fill_pct)}">${a.maker_fill_pct==null?'—':a.maker_fill_pct+'%'} <small>count</small></div></div>
+    <div class="card stat"><div class="k">Fill rate (value)</div><div class="v">${a.maker_fill_val_pct==null?'—':a.maker_fill_val_pct+'%'}</div></div>
+    <div class="card stat"><div class="k">Quotes placed / filled</div><div class="v">${a.maker_placed??'—'} <small>/ ${a.maker_filled??'—'}</small></div></div>
+    <div class="card stat"><div class="k">Resting now</div><div class="v">${a.n_resting??0}</div></div>`:`
+    <div class="card stat"><div class="k">Open positions</div><div class="v">${a.n_open??0}</div></div>
+    <div class="card stat"><div class="k">Settled</div><div class="v">${a.n_settled??0}</div></div>`;
+  return `
+    <div class="grid cols-4">
+      <div class="card stat"><div class="k">Realized (settled)</div><div class="v ${cls(selTot)}">${eraOn(a)&&selTot==null?'<span style="font-size:14px" title="no trades in the selected era">— (0 in era)</span>':money(selTot)}</div></div>
+      <div class="card stat"><div class="k">MTM</div><div class="v ${cls(a.mtm)}">${eraOn(a)&&ERA==='model'?'—':money(a.mtm)}</div></div>
+      <div class="card stat"><div class="k">Overall PnL</div><div class="v ${cls(selOv)}">${eraOn(a)&&selOv==null?'<span style="font-size:14px" title="no trades in the selected era">— (0 in era)</span>':money(selOv)}</div></div>
+      <div class="card stat"><div class="k">Return / capital</div><div class="v ${cls(a.return_pct)}">${eraOn(a)?'—':pct(a.return_pct)}</div></div>
+    </div>
+    <div class="note" style="margin-top:6px">${scopeLab}</div>
+    <div class="grid cols-4" style="margin-top:18px">
+      <div class="card stat"><div class="k">Trades</div><div class="v">${selN} <small>/ ${selWin==null?'—':selWin+'% win'}</small></div></div>
+      ${isBT?'':`<div class="card stat"><div class="k">Avg / peak capital</div><div class="v">$${a.avg_cap??'—'} <small>/ $${a.peak_cap??'—'}</small></div></div>`}
+      ${makerStats}
+    </div>`;
+}
+function refreshPerfCards(){if(CURRENT_ARM){const pc=$('#perfcards');if(pc)pc.innerHTML=perfCards(CURRENT_ARM);}}
+function showArm(name){
+  const a=SPEC.strategies.find(x=>x.name===name); if(!a) return;
+  CURRENT_ARM=a;
+  const isMaker=a.is_maker;
+  const isBT=(SPEC.meta&&SPEC.meta.source_kind)==='backtest';
+  const levers=(a.levers||[]).map(([k,v,d])=>`<div class="lever"><div class="lk">${k}<span class="lv">${v}</span></div><div class="ld">${d}</div></div>`).join('');
+  const mfNote=isMaker?`<div class="warnbox"><b>Maker ≠ taker.</b> A maker order only fills when someone else's market
+    order crosses our resting quote — so the headline metric is <b>fill rate</b> (count &amp; value), and fills are
+    adversely selected (you get hit when flow runs against you). Resting quotes that never fill reserve capital until
+    they expire or cancel.</div>`:'';
+  $('#detail').innerHTML=`
+    <div class="back" onclick="hideArm()">← all strategies</div>
+    <div class="dvhead"><h2>${a.name}</h2>${eBadge(a.exec)}${fBadge(a.fair)}
+      ${a.lead?`<span class="badge b-open">lead ${a.lead[0]}–${a.lead[1]}</span>`:''}
+      ${a.twin?`<span class="badge b-marketable" title="paper twin of the live \$5 arm">↔ ${a.twin}</span>`:''}
+      ${a.period?`<span class="t-sub">backtest period ${a.period}</span>`:(a.start?`<span class="t-sub">started ${a.start}</span>`:'')}
+      ${a.budget!=null?`<span class="t-sub">· capital cap \$${a.budget}</span>`:''}
+      ${a.trades_per_day!=null?`<span class="t-sub">· ${a.trades_per_day} trades/day</span>`:''}</div>
+    <div class="dvdesc">${a.desc||''}</div>
+    <div class="seclabel">Performance</div>
+    <div id="perfcards">${perfCards(a)}</div>${mfNote}
+    ${isBT?`<div id="dyncontrols"></div><div id="dynview"></div>`:''}
+    ${a.cap_trail?`<div class="card" style="margin-top:18px"><div class="stat"><div class="k">Capital deployed over cycles${a.budget?` (budget $${a.budget})`:''}</div></div>${sparkline(a.cap_trail,a.budget)}</div>`:''}
+    <div class="seclabel" style="margin-top:34px">Levers</div><div class="card">${levers}</div>
+    <div id="tradespanel">
+    <div class="panelhead">${(a.runs&&a.runs.length)?'Runs':'Trades'} <span class="t-sub" style="font-size:13px">· ${(a.runs&&a.runs.length)?(a.runs.length+' × $100 / 5-day runs · click a run for its trades, then a trade for its pricing'):((a.trades_n??(a.trades||[]).length)+' total'+((a.trades_n&&(a.trades||[]).length<a.trades_n)?` (newest ${(a.trades||[]).length} embedded)`:'')+' · click any row to expand its full pricing breakdown')}</span></div>
+    ${(a.runs&&a.runs.length)?runsTable(a):tradesTable(a.trades||[],a.name,a.is_maker)}
+    </div>
+    <div class="foot">Fair = our model's P(bucket) at entry. ${(a.runs&&a.runs.length)?'Each run is one independent deployment; expand it for its trades, then expand a trade':'Expand a row'} to see every component model's estimate, the central,
+      the calibration, and how fair → edge → side were computed for that exact market. Closed = realized PnL at
+      resolution; open = unrealized marked to live mid; resting = maker quote awaiting a fill. “open ↗” → the live Polymarket market.</div>`;
+  // wire expanders (runs → lazily build trades → wire trade expanders; else flat trades)
+  if(a.runs&&a.runs.length){
+    document.querySelectorAll('#detail .rrow').forEach(tr=>tr.onclick=()=>{
+      const i=tr.dataset.r, det=document.querySelector(`#detail .rdetrow[data-rdet="${i}"]`),
+            cont=document.querySelector(`#detail .rtrades[data-rt="${i}"]`);
+      const show=det.style.display==='none';
+      if(show && !cont.dataset.built){ cont.innerHTML=tradesTable(a.runs[i].trades||[],a.name,a.is_maker); cont.dataset.built='1'; wireTrades(cont); }
+      det.style.display=show?'table-row':'none'; tr.classList.toggle('opened',show);
+    });
+  } else { wireTrades($('#detail')); }
+  if(isBT) redrawDyn(a);
+  $('#overview').style.display='none';$('#detail').style.display='block';
+  window.scrollTo({top:0,behavior:'instant'});location.hash=encodeURIComponent(name);
+}
+function hideArm(){if(SPEC.meta&&SPEC.meta.back_url){location.href=SPEC.meta.back_url;return;}
+  $('#detail').style.display='none';$('#overview').style.display='block';
+  history.replaceState(null,'',location.pathname);window.scrollTo({top:0,behavior:'instant'});}
+renderNav();renderHead();renderCostBar();renderEraBar();renderFacetBar();renderLeadBar();renderOverview();
+if(SPEC.meta&&SPEC.meta.autoopen&&SPEC.strategies.length){showArm(SPEC.strategies[0].name);}
+else if(location.hash){const n=decodeURIComponent(location.hash.slice(1));if(SPEC.strategies.find(x=>x.name===n))showArm(n);}
+</script>
+</body>
+</html>

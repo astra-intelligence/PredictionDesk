@@ -1,0 +1,75 @@
+# Runtime-data symlinks (dev machines may point these at an external data dir —
+# e.g. ~/polyedge-data — so the repo never holds the parquet flood; see AGENTS.md)
+desk/data/capture
+desk/eval/runs
+desk/eval/recon/findings
+desk/reports/out
+dashboard
+
+# Captured market data (large; recorded by the capture daemon — collect your own)
+desk/data/capture/**
+**/*.parquet
+**/_universe_index.json
+**/_status.json
+**/capture_health.log
+*.log
+
+# …except the bundled demo sample (data/sample/): ~1 MB of real recorded books/trades for `make demo`
+!data/sample/**/*.parquet
+
+# Eval / recon runtime artifacts (regenerated; PASS must be evaluator-earned, never committed)
+desk/eval/recon/findings/*
+desk/eval/runs/**
+
+# Ledger + driver runtime state
+desk/tracker/ledger.json
+desk/tracker/ledger.json.lock
+desk/tracker/trades.jsonl
+desk/tracker/marks.json
+desk/driver/positions_*.json
+desk/driver/positions_*.json.lock
+desk/driver/resting_*.json
+desk/driver/live_orders_*.json
+desk/driver/_heartbeat
+*.err
+*.out
+*.pid
+
+# Reports / dashboard output (rebuilt)
+desk/reports/out/**
+dashboard/
+
+# arb-scanner per-run output (regenerated each scan)
+arb-scanner-runs/
+
+# Tenant calibration substrate + market meta (machine-built, quota-metered, regenerable —
+# weather/substrate.py + build_meta rebuild them; stations/station_dataset stay TRACKED)
+strategies/*/weather/market_meta.json
+strategies/*/weather/resolved_index.json
+strategies/*/weather/error_series*.json
+strategies/*/weather/error_series_v2/
+strategies/*/weather/calibration.json
+strategies/*/weather/emos_series.json
+desk/data/live_forecast_cache.json*
+desk/sim/spread_model.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# OS / IDE
+.DS_Store
+.cursor/
+
+# earned recon PASS carries real order/trade ids + tx hash (wallet-resolvable) - never commit
+desk/eval/recon/PASS.json
+strategies/*/experiments/

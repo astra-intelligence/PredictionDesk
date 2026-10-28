@@ -1,0 +1,9 @@
+# Strategy ideas: the public repo's reference is the shipped sample tenants (strategies/sample_calendar,
+# strategies/sample_weather). Public strategy ideas are filed as normal feature issues against the
+# samples/plugin contract. Private hypotheses stay in the owner's private lab (pre-registration,
+# multiple-testing discipline) — that repo is deliberately NOT linked here (Tiger, 2026-10-27).
+blank_issues_enabled: false
+contact_links:
+  - name: Strategy idea (build on the sample tenants)
+    url: https://github.com/stranger00135/PredictionDesk/issues/new?template=feature.yml&labels=lane%3AG%2Cstrategy
+    about: Propose a strategy as a feature issue against the plugin contract and sample tenants.

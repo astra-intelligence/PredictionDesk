@@ -1,0 +1,44 @@
+# openspec-lint — required check: the PR is attached to the spec layer at its tier's rigor
+# (harness pipeline step 6; the fail-closed before-merge shape of design §6.1.4).
+#
+# Validates: exactly one tier:* label; the PR names a real OpenSpec change present in the tree;
+# tier-appropriate artifacts (T0 design.md, T0/T1 tasks.md); the proposal names its eval gate
+# section(s); gate-1 (spec review) state matches the tier. Logic: scripts/ci/openspec_lint.py.
+#
+# Re-triggers on label/review changes so applying spec:approved or submitting an approving review
+# refreshes the check without a manual re-run. Read-only token use; safe on fork PRs.
+name: openspec-lint
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
+    branches: [dev, main]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: openspec-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  openspec-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Pin to the PR head so pull_request_review-triggered runs read the same tree and
+          # report their check run on the commit branch protection actually inspects.
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: lint spec attachment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python3 scripts/ci/openspec_lint.py

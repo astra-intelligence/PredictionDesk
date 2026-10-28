@@ -1,0 +1,21 @@
+name: branch-flow
+# Flow rule (Tiger, 2026-10-27): everything merges to dev; only dev merges to main.
+# Advisory while the repo is private (no branch protection); becomes a required check at flip.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+permissions: {}
+jobs:
+  branch-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: enforce dev -> main only
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          if [ "$BASE" = "main" ] && [ "$HEAD" != "dev" ]; then
+            echo "::error::PRs to main must come from dev (got: $HEAD). Target dev instead."
+            exit 1
+          fi
+          echo "branch-flow OK: $HEAD -> $BASE"

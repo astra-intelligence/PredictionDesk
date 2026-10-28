@@ -1,0 +1,20 @@
+# Strategy driver — THE one forward/live runtime (registry -> driver -> engine), daemon loop.
+# Paper by default. Live needs LIVE_TRADING_ENABLED=true + a scoped PASS + wallet secrets —
+# put those in %h/desk-repo/.env (never in this unit; a unit-baked flag is a contamination class).
+# WorkingDirectory is the %h/desk-repo PLACEHOLDER (see scripts/systemd/README.md).
+[Unit]
+Description=The Desk — strategy driver (paper/live)
+After=network-online.target desk-capture.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/desk-repo
+EnvironmentFile=-%h/desk-repo/.env
+Environment=OMP_NUM_THREADS=2
+ExecStart=/usr/bin/env python3 -m desk.driver.strategy_driver
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

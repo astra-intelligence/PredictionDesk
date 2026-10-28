@@ -1,0 +1,24 @@
+{
+ "_note": "Desk tenant manifest — the plug-in contract the registry discovers (see AGENTS.md). This tenant is the MINIMAL sample: zero external data, zero domain knowledge — it proves the contract with the capture store alone. Bump `version` on any default/behavior change, then reseal the config rows.",
+ "name": "sample_calendar",
+ "module": "sample_calendar",
+ "version": "2",
+ "entrypoint": "sample_calendar.strategy:generate_orders",
+ "schedule": {
+  "type": "interval",
+  "secs": 21600
+ },
+ "enabled": false,
+ "params": {
+  "qty": 50.0,
+  "n_markets": 3,
+  "min_snaps": 2,
+  "mode": "taker",
+  "maker_validity_s": 3600
+ },
+ "hooks": {
+  "eval_checks": "sample_calendar.eval_checks:sections",
+  "describe": "sample_calendar.strategy:describe"
+ },
+ "playbook": "PLAYBOOK.md"
+}

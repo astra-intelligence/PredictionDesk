@@ -1,0 +1,27 @@
+{
+ "_note": "Desk tenant manifest — the plug-in contract the registry discovers (see AGENTS.md). This tenant is the shipped SAMPLE: single-model gaussian weather pricing, paper taker. Bump `version` on any default/behavior change, then reseal the config rows.",
+ "name": "sample_weather",
+ "module": "sample_weather",
+ "version": "2",
+ "entrypoint": "sample_weather.strategy:generate_orders",
+ "schedule": {
+  "type": "interval",
+  "secs": 21600
+ },
+ "enabled": false,
+ "params": {
+  "model": "gfs_global",
+  "entry_threshold": 0.2,
+  "lead_min": 1,
+  "lead_max": 5,
+  "qty": 5.0,
+  "min_price": 0.05,
+  "mode": "taker"
+ },
+ "hooks": {
+  "eval_checks": "sample_weather.eval_checks:sections",
+  "event_slug_of": "sample_weather.cities:event_slug_of",
+  "discover_event_slugs": "sample_weather.cities:discover_event_slugs"
+ },
+ "playbook": "PLAYBOOK.md"
+}

@@ -1,0 +1,80 @@
+name: Feature / change
+description: One tracer-bullet-sized change — a fresh agent must be able to grab it, build it, and prove it.
+labels: ["needs:spec"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are the ONE durable work queue. Triage (the PM) converts the hints below into
+        `tier:*` / `lane:*` / `risk:*` labels per the change-class table, then the spec phase
+        turns this into an OpenSpec change with numbered success criteria.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal / problem
+      description: What should be true after this ships, and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change (optional sketch)
+      description: Rough shape only — the spec phase owns the design.
+  - type: dropdown
+    id: change-class
+    attributes:
+      label: Change class (tier hint)
+      description: Pick the row this change belongs to; triage confirms the tier label.
+      options:
+        - "Money semantics — live path, seals, budgets, promotions (tier:T0, lane:L)"
+        - "Measuring stick — eval golden files, strategy config, verify CLI, CI, release tooling, .github (tier:T0, lane:L)"
+        - "Framework architecture — engine/driver/store/types behavior, public contracts (tier:T0)"
+        - "Framework behavior, non-architectural — bounded logic inside existing contracts (tier:T1)"
+        - "New UI page/flow on existing patterns (tier:T1)"
+        - "Strategy lab — new hypothesis/arm (tier:T1; belongs in the private strategy repo, not here)"
+        - "Refactor / perf / logging, no behavior change (tier:T2, lane:G)"
+        - "Bugfix with its new golden/eval case (tier:T2, lane:G)"
+        - "Docs / README / examples / UI copy (tier:T2, lane:G)"
+        - "Release / flip ops / repo settings (tier:T0, lane:L)"
+    validations:
+      required: true
+  - type: dropdown
+    id: lane
+    attributes:
+      label: Lane hint
+      options:
+        - "lane:G — offline-verifiable (eval-fast + static evidence suffices)"
+        - "lane:L — needs local runtime (capture data, paper stack, live screenshots, seals)"
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk hint
+      options:
+        - "risk:low — docs, copy, isolated UI"
+        - "risk:std — framework behavior inside existing contracts"
+        - "risk:core — money semantics, eval/golden, live path, contracts"
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Success criteria (numbered, machine-checkable where possible)
+      placeholder: |
+        1. gate section `x_y`: N checks pass (red before this change, green after)
+        2. `make demo` still completes in < 90s
+    validations:
+      required: true
+  - type: input
+    id: eval-sections
+    attributes:
+      label: Eval gate section(s) this adds or changes
+      placeholder: 'e.g. adds `driver_retry` (HARD, in --fast) — or: none, because <why>'
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence contract
+      description: Exactly what the implementing PR must show (gate output, timings, screenshots, report...). The independent verifier accepts or rejects against this.

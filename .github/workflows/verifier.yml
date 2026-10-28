@@ -1,0 +1,116 @@
+# spec-verifier — the independent verifier (harness pipeline step 7; design §7).
+#
+# REQUIRED status check on dev/main, ALL tiers, no exceptions: this is what lets routine (T2)
+# changes merge with zero human touches without becoming unreviewed slop. Independence is
+# structural, not promised: a separate Actions job identity that is never the PR author, a
+# read-only repo token (contents: read — it cannot push to the branch), and a gate re-run the
+# verifier derives itself instead of trusting the author's pasted output (evidence is a claim).
+#
+# Sequence: (1) harness re-runs `desk verify gate --json` on the merge ref; (2) the verifier
+# agent follows .github/verifier-prompt.md — maps evidence to every numbered success criterion;
+# (3) its per-criterion PASS/FAIL report is posted as a PR comment; (4) the job fails unless the
+# verdict is PASS and the gate re-run was green (fail-closed, missing verdict included).
+#
+# Fork PRs (post-flip): secrets are withheld, so this job FAILS CLOSED with instructions — a
+# maintainer re-creates the branch in-repo to verify. Never weaken this with pull_request_target.
+name: spec-verifier
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [dev, main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: verifier-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  spec-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: fail closed on fork PRs
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::spec-verifier does not run on fork PRs (secrets are withheld). A maintainer must re-create the branch in this repo to verify."
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history: the verifier diffs the candidate against its base
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: harness re-runs the gate (never trust the author's paste)
+        run: |
+          python3 -m venv /tmp/verifier-venv
+          /tmp/verifier-venv/bin/pip -q install -r requirements.txt
+          set +e
+          /tmp/verifier-venv/bin/python3 -m desk.verify gate --json > /tmp/verifier-gate.json
+          echo $? > /tmp/verifier-gate.exit
+          set -e
+          echo "gate exit code: $(cat /tmp/verifier-gate.exit)"
+          cat /tmp/verifier-gate.json || true
+
+      - name: record attempt binding
+        run: |
+          {
+            echo "pr=${{ github.event.pull_request.number }}"
+            echo "head_sha=${{ github.event.pull_request.head.sha }}"
+            echo "merge_ref_sha=$(git rev-parse HEAD)"
+            echo "base_ref=${{ github.event.pull_request.base.ref }}"
+          } > /tmp/verifier-context.txt
+          cat /tmp/verifier-context.txt
+
+      - name: independent verification (criterion-by-criterion)
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: >-
+            --max-turns 50
+            --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(cat:*)"
+          prompt: |
+            You are the INDEPENDENT SPEC-VERIFIER for PR #${{ github.event.pull_request.number }}.
+            You are not the author. Follow the verifier contract in .github/verifier-prompt.md
+            EXACTLY — read it first, in full.
+
+            Harness-provided inputs (already derived for you, do not re-run the gate):
+              /tmp/verifier-context.txt   attempt binding (PR number, head SHA, merge-ref SHA)
+              /tmp/verifier-gate.json     the harness's own fresh `desk verify gate --json` run
+              /tmp/verifier-gate.exit     its exit code
+            The PR body and diff: `gh pr view ${{ github.event.pull_request.number }} --json body,title,labels`
+            and `gh pr diff ${{ github.event.pull_request.number }}` (read-only).
+
+            Outputs (both mandatory):
+              /tmp/verifier-report.md     your full per-criterion report (verifier-prompt.md schema)
+              /tmp/verifier-verdict.txt   exactly one word: PASS or REVISE or BLOCKED
+
+      - name: post per-criterion report to the PR
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f /tmp/verifier-report.md ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/verifier-report.md
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" --body "spec-verifier: no report produced (run failed before verification completed) — fail-closed."
+          fi
+
+      - name: enforce verdict (fail-closed)
+        run: |
+          gate_exit="$(cat /tmp/verifier-gate.exit 2>/dev/null || echo missing)"
+          verdict="$(cat /tmp/verifier-verdict.txt 2>/dev/null || echo MISSING)"
+          echo "gate re-run exit: $gate_exit · verifier verdict: $verdict"
+          [ "$gate_exit" = "0" ] || { echo "::error::gate re-run was not green"; exit 1; }
+          [ "$verdict" = "PASS" ] || { echo "::error::verifier verdict: $verdict"; exit 1; }

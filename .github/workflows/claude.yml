@@ -1,0 +1,103 @@
+# claude — lane-G execution fleet (harness pipeline step 4; design §12.4).
+#
+# Two entry points:
+#   interactive: @claude in an issue/PR comment (OWNER/MEMBER/COLLABORATOR only — post-flip,
+#                outsiders must never be able to spend tokens or steer an agent with write access)
+#   automation:  the `agent:build` label on an issue dispatches a headless build worker. Labels
+#                require triage permission, so this trigger is inherently maintainer-gated.
+#
+# Model-by-label: default = the action's current Sonnet-class default; `agent:hard` upgrades.
+# REVIEW AT APPLY TIME: confirm the --model id against the current model list.
+#
+# Concurrency: one run per issue/PR thread (no duplicate workers on one task). The fleet-wide cap
+# (design target: 5 concurrent lane-G workers) has no native per-label primitive on user repos —
+# enforce via PM label discipline + the repository Actions concurrency limit.
+#
+# Public-repo safety: no pull_request_target; association-gated triggers; ANTHROPIC_API_KEY is
+# never exposed to fork-originated events (label + comment events run in base-repo context only).
+name: claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: read
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  interactive:
+    if: >-
+      (github.event_name == 'issue_comment' &&
+       contains(github.event.comment.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'issues' && github.event.action == 'opened' &&
+       contains(github.event.issue.body, '@claude') &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: >-
+            --max-turns 60
+            ${{ contains(github.event.issue.labels.*.name, 'agent:hard') && '--model claude-opus-4-1' || '' }}
+
+  build:
+    if: >-
+      github.event_name == 'issues' && github.event.action == 'labeled' &&
+      github.event.label.name == 'agent:build'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: >-
+            --max-turns 120
+            ${{ contains(github.event.issue.labels.*.name, 'agent:hard') && '--model claude-opus-4-1' || '' }}
+          prompt: |
+            You are a lane-G build worker on this repository's agent harness. Implement GitHub
+            issue #${{ github.event.issue.number }} end to end.
+
+            Contract (read AGENTS.md first; it is binding):
+            1. Read the issue and the OpenSpec change it names under openspec/changes/<name>/.
+               The change's numbered success criteria + evidence contract define DONE. If the
+               issue names no change, or the change lacks gate-1 approval for its tier, STOP and
+               comment on the issue asking the PM to fix the spec state — do not improvise scope.
+            2. Work on a branch named agent/${{ github.event.issue.number }}-<short-slug>.
+            3. Red → green: run `python3 -m desk.verify gate --json` (= make eval-fast) and make
+               the change's named eval section(s) pass. New behavior needs its eval checks landed
+               in this same PR (they must fail without your change).
+            4. NEVER touch protected paths: .github/**, desk/eval/golden/**,
+               desk/signals/strategy_config.json, desk/verify.py, scripts/ci/**, CODEOWNERS.
+               If the task seems to require it, stop and escalate on the issue (label: blocked).
+            5. Open a PR to `dev` using the repository PR template. Fill the evidence block for
+               real: paste the full gate --json output AND the exact head SHA it ran on
+               (git rev-parse HEAD), plus one evidence line per success criterion. Evidence is a
+               claim the independent verifier re-derives — stale or mismatched evidence is
+               rejected, so re-run the gate after your final commit.
+            6. You own this PR through merge: fix CI failures and verifier findings on this same
+               branch. After 2 failed self-fix attempts, comment what you tried and what is
+               blocking, apply the `blocked` label to the issue, and stop.

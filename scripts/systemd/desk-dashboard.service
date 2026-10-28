@@ -1,0 +1,17 @@
+# Read-only dashboard server — http://localhost:8788 (override port with DASH_PORT in .env).
+# WorkingDirectory is the %h/desk-repo PLACEHOLDER (see scripts/systemd/README.md).
+[Unit]
+Description=The Desk — dashboard server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/desk-repo
+EnvironmentFile=-%h/desk-repo/.env
+ExecStart=/usr/bin/env python3 -m desk.dashboard_server
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

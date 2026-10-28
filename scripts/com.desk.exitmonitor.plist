@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tight TP/SL exit monitor. Every 5 min it checks held positions of live arms carrying exit_tp/exit_sl
+     against the LIVE book (realizable bid/ask) and exits the full position at the touch. Decoupled from the
+     2h entry scan (no universe scan). Per-run 180s SIGALRM deadline inside (a network hang self-kills; the
+     next 5-min interval retries clean).
+
+     Paper by default; live needs LIVE_TRADING_ENABLED=true + scoped PASS + geo — NEVER exported here (a plist
+     env export is a behavior-flag contamination class). Inject the flag + wallet SECRETS into the launchd
+     user domain at deploy (never commit POLY_*), e.g.
+       set -a; source ./.env; set +a
+       launchctl setenv LIVE_TRADING_ENABLED true
+       launchctl setenv POLY_PRIVATE_KEY "$POLY_PRIVATE_KEY"; launchctl setenv POLY_FUNDER_ADDRESS "$POLY_FUNDER_ADDRESS"
+     Install:
+       cp scripts/com.desk.exitmonitor.plist ~/Library/LaunchAgents/
+       launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.desk.exitmonitor.plist
+     Stop:  launchctl bootout gui/$UID/com.desk.exitmonitor
+     Reports -> desk/driver/exitmonitor.{out,err}. -->
+<!-- PATH PLACEHOLDER: launchd needs absolute paths — before installing, point every
+     /Users/YOUR_USERNAME/desk-repo at your checkout:
+       sed -i "" "s#/Users/YOUR_USERNAME/desk-repo#$PWD#g" scripts/com.desk.*.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.desk.exitmonitor</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd "/Users/YOUR_USERNAME/desk-repo" &amp;&amp; exec python3 -m desk.driver.exit_monitor</string>
+  </array>
+  <key>StartInterval</key><integer>300</integer>
+  <key>RunAtLoad</key><true/>
+  <key>WorkingDirectory</key><string>/Users/YOUR_USERNAME/desk-repo</string>
+  <key>EnvironmentVariables</key><dict><key>OMP_NUM_THREADS</key><string>2</string></dict>
+  <key>StandardOutPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/driver/exitmonitor.out</string>
+  <key>StandardErrorPath</key><string>/Users/YOUR_USERNAME/desk-repo/desk/driver/exitmonitor.err</string>
+  <key>Nice</key><integer>5</integer>
+</dict>
+</plist>

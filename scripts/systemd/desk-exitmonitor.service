@@ -1,0 +1,21 @@
+# Tight TP/SL exit monitor. Its entrypoint runs ONE check pass then exits (self-kills a network
+# hang via an internal 180s deadline). Restart=always + RestartSec=300 reruns it on a ~5-minute
+# cadence — the interval this monitor was designed for; a 10s cadence would hammer the live book API.
+# Paper by default. Live flag + wallet secrets belong in %h/desk-repo/.env, never in this unit.
+# WorkingDirectory is the %h/desk-repo PLACEHOLDER (see scripts/systemd/README.md).
+[Unit]
+Description=The Desk — TP/SL exit monitor
+After=network-online.target desk-strategydriver.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/desk-repo
+EnvironmentFile=-%h/desk-repo/.env
+Environment=OMP_NUM_THREADS=2
+ExecStart=/usr/bin/env python3 -m desk.driver.exit_monitor
+Restart=always
+RestartSec=300
+
+[Install]
+WantedBy=default.target

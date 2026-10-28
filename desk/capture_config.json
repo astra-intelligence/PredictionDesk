@@ -1,0 +1,38 @@
+{
+ "_note": "Capture universe config. Each lane selects markets from Gamma by tag; the capture daemon polls their books + trades. The shipped default records one broad liquid lane. The sample_weather strategy additionally needs the temperature ladders: copy `_example_weather_lane` into `lanes` and set real values — find tag ids via https://gamma-api.polymarket.com/tags (the daily temperature markets carry a weather tag); `date_discovery: true` lets tenant hooks (manifest `discover_event_slugs(window_days)` — the tenant owns the slug grammar; `date_discovery_cities` is the deprecated city-list alias) enumerate each day's events so tomorrow's ladders are captured as they list.",
+ "_example_weather_lane": {
+  "name": "weather",
+  "tag_ids": [0],
+  "count": 50,
+  "min_volume24hr": 0,
+  "end_within_days": 5,
+  "include_substrings": [
+   "highest temperature",
+   "lowest temperature"
+  ],
+  "balance_by_end_date": true,
+  "date_discovery": true
+ },
+ "lanes": [
+  {
+   "name": "liquid-markets",
+   "tag_ids": [
+    2
+   ],
+   "count": 200,
+   "min_volume24hr": 1000,
+   "end_within_days": 30,
+   "balance_by_end_date": true
+  }
+ ],
+ "cap_patterns": [],
+ "explicit_slugs": [],
+ "min_volume24hr": 0,
+ "max_markets": 300,
+ "poll_secs": 5,
+ "trades_poll_secs": 120,
+ "refresh_universe_secs": 1800,
+ "flush_secs": 30,
+ "out_dir": "desk/data/capture/",
+ "max_secs": null
+}

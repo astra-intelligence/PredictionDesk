@@ -1,0 +1,35 @@
+# project-add — auto-add every new issue/PR to the harness kanban board (Projects v2), so the
+# board stays the live picture of what agents are working on without manual filing.
+#
+# Inert until BOTH exist (scripts/ci/setup_github.sh sets them):
+#   PROJECT_URL   repo variable  — the Projects v2 board URL
+#   PROJECTS_PAT  repo secret    — classic PAT (scopes: project, repo); GITHUB_TOKEN cannot write
+#                                  to user-owned Projects v2
+# Alternative (zero-secret): the board's built-in "auto-add" workflow, enabled in project
+# settings — then this workflow simply never fires its step.
+#
+# Fork PRs: secrets withheld -> the guarded step skips; a maintainer adds the item manually.
+name: project-add
+
+on:
+  issues:
+    types: [opened, reopened]
+  pull_request:
+    types: [opened, reopened]
+
+permissions: {}
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PROJECTS_PAT: ${{ secrets.PROJECTS_PAT }}
+      PROJECT_URL: ${{ vars.PROJECT_URL }}
+    steps:
+      # Third-party action: SHA-pin at apply time (see scripts/ci/setup_github.sh notes).
+      - uses: actions/add-to-project@v1.0.2
+        if: env.PROJECTS_PAT != '' && env.PROJECT_URL != ''
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.PROJECTS_PAT }}

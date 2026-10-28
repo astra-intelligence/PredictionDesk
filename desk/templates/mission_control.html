@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>PredictionDesk · Mission Control</title>
+<style>
+/* ── PredictionDesk Mission Control — tokens per the approved mock (context/mock/ui-mock-v1.html) ── */
+:root{
+  --bg:#0b0f14; --panel:#141a22; --panel2:#18202b; --panel3:#1c2531; --line:#232c38;
+  --ink:#e8edf4; --mut:#9aa7b5; --faint:#5e6b7a;
+  --gold:#F5C518;
+  --ok:#18B06B; --warn:#E8A020; --bad:#E8554D;
+  --paper:#2596D1; --live:#E8554D; --locked:#E8A020; --off:#5A6472;
+  --serif:Georgia,'Times New Roman',serif;
+  --mono:ui-monospace,Menlo,Monaco,'SF Mono',monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.spine{height:3px;background:linear-gradient(90deg,#2596D1 0%,#18B06B 28%,#F5C518 55%,#E8A020 78%,#E8554D 100%)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px 72px}
+.mono{font-family:var(--mono)}
+.mut{color:var(--mut)} .faint{color:var(--faint)}
+.neg{color:var(--bad)} .posv{color:var(--ok)}
+
+/* header */
+header{padding:18px 0 12px;border-bottom:1px solid var(--line)}
+.brandrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+h1{font-family:var(--serif);font-weight:400;font-size:36px;line-height:1;letter-spacing:.4px}
+h1 .em{font-style:italic;color:var(--gold)}
+.hright{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+#timeTxt{font-family:var(--mono);font-size:12px;color:var(--mut);cursor:pointer;user-select:none}
+#timeTxt b{color:var(--ink);font-weight:500}
+#timeTxt:hover{color:var(--ink)}
+.asofrow{display:flex;align-items:center;gap:8px}
+#asof{font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+#asof.stale{color:var(--bad)}
+nav{display:flex;gap:18px;margin-top:14px;font-family:var(--mono);font-size:12px;flex-wrap:wrap}
+nav a{color:var(--mut);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent;cursor:pointer}
+nav a:hover{color:var(--ink)}
+nav a.here{color:var(--gold);border-color:var(--gold)}
+
+/* chips: OUTLINED pills — shape ≠ status */
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid;border-radius:999px;padding:2px 10px;
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.08em;background:transparent;
+  cursor:pointer;white-space:nowrap;text-transform:uppercase}
+.c-paper{color:var(--paper);border-color:var(--paper)}
+.c-live{color:var(--live);border-color:var(--live)}
+.c-locked{color:var(--locked);border-color:var(--locked)}
+.c-off{color:var(--off);border-color:var(--off)}
+
+/* status: dot + text */
+.hdot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none}
+.hdot.ok{background:var(--ok)} .hdot.warn{background:var(--warn)} .hdot.bad{background:var(--bad)}
+.hdot.na{background:var(--faint)}
+
+/* health strip (sticky ≥481) */
+.strip{position:sticky;top:0;z-index:60;background:rgba(11,15,20,.95);border-bottom:1px solid var(--line);
+  margin:0 -20px;padding:0 20px}
+.stripin{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:9px 0}
+.hcell{display:flex;flex-direction:column;gap:2px;padding:4px 8px;border-radius:8px;cursor:pointer;min-width:0}
+.hcell:hover{background:var(--panel)}
+.hlabrow{display:flex;align-items:center;gap:7px}
+.hlab{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.hval{font-family:var(--mono);font-size:12.5px;color:var(--ink);padding-left:15px}
+
+/* small-caps section labels */
+.seclabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);
+  margin:26px 0 12px;display:flex;align-items:center;gap:12px}
+.seclabel::after{content:"";flex:1;height:1px;background:var(--line)}
+.seclabel .sub{letter-spacing:.06em;text-transform:none;color:var(--faint)}
+
+/* fire bar */
+.firebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:22px;padding:9px 14px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.fbtext{font-family:var(--mono);font-size:12px;color:var(--ink);flex:1 1 220px;min-width:0}
+.fbtext .mut{color:var(--faint)}
+.fbtext .fip{color:var(--warn)}
+
+/* buttons */
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:5px 13px;border:1px solid var(--line);
+  border-radius:8px;background:transparent;color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--mut)}
+.btn.quiet{color:var(--mut);font-size:10.5px;padding:4px 10px}
+.btn.quiet:hover{color:var(--ink)}
+.btn.primary{border-color:var(--gold);color:var(--gold)}
+.btn.primary:hover{background:rgba(245,197,24,.08)}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* error banner */
+#errbar{display:none;margin-top:12px;padding:8px 14px;border:1px solid rgba(232,85,77,.5);border-radius:10px;
+  font-family:var(--mono);font-size:11.5px;color:var(--bad);background:rgba(232,85,77,.06)}
+
+/* strategy cards */
+#cards{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card.dim{opacity:.62;padding:10px 16px}
+.chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.aname{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.01em;overflow-wrap:anywhere}
+.chead .sp{flex:1}
+.rline{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin-top:8px;line-height:1.75}
+.rline .seg{white-space:nowrap}
+.tline{font-family:var(--mono);font-size:12px;color:var(--ink);margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--line);line-height:1.75}
+.tline .seg{white-space:nowrap}
+.card.dim .tline{border-top:none;padding-top:0;margin-top:6px;color:var(--mut)}
+.warnmk{color:var(--warn);cursor:pointer;border-bottom:1px dotted var(--warn)}
+.errline{font-family:var(--mono);font-size:11px;color:var(--bad);margin-top:6px;overflow-wrap:anywhere}
+.msince{color:var(--mut);font-family:var(--mono);font-size:11px;white-space:nowrap;cursor:pointer}
+
+/* recent activity */
+#feed{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px 16px}
+.frow{display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px}
+.frow:last-child{border-bottom:none}
+.ft{color:var(--faint);flex:none}
+.fx{color:var(--ink);overflow-wrap:anywhere}
+.fx.u{cursor:pointer}
+.fx.u i{font-style:normal;border-bottom:1px dotted var(--mut)}
+.fx .ctl{color:var(--gold)}
+
+/* weekly strip */
+.wgrid{display:grid;grid-template-columns:repeat(6,1fr) 1.45fr;gap:8px}
+.wcell{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 9px;cursor:pointer;min-width:0}
+.wcell:hover{border-color:var(--mut)}
+.wcell.today{border-color:var(--faint)}
+.wd{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--faint)}
+.wv{font-family:var(--mono);font-size:11.5px;color:var(--mut);margin-top:4px;overflow-wrap:anywhere}
+.wv.hot{border-bottom:1px dotted currentColor;display:inline-block}
+.wv.lose{color:var(--bad)} .wv.win{color:var(--ok)}
+.wv2{font-family:var(--mono);font-size:10.5px;color:var(--ink);margin-top:2px;overflow-wrap:anywhere}
+
+/* phone glance cards (≤480 only) */
+.glances{display:none}
+
+/* popover + sheet */
+#back{display:none;position:fixed;inset:0;background:rgba(4,6,10,.55);z-index:210}
+#pop{display:none;position:fixed;z-index:220;width:min(380px,calc(100vw - 16px));max-height:72vh;overflow:auto;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.55);font-size:12px}
+#pop.sheet{left:0!important;right:0;bottom:0;top:auto!important;width:auto;border-radius:14px 14px 0 0;
+  border-left:none;border-right:none;border-bottom:none;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.ptitle{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;font-weight:600;
+  margin-bottom:9px;flex-wrap:wrap;overflow-wrap:anywhere}
+.pr{display:flex;gap:10px;padding:4px 0;border-top:1px solid var(--line)}
+.pk{flex:0 0 74px;font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);padding-top:2px}
+.pv{flex:1;color:var(--ink);font-family:var(--mono);font-size:11.5px;line-height:1.6;overflow-wrap:anywhere}
+.pv .mono{font-size:11px;color:var(--gold)}
+.plegend{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.plegend .ll{display:flex;gap:8px;align-items:flex-start;padding:4px 0}
+.plegend .chip{cursor:default;flex:none}
+.plegend .ld{color:var(--mut);font-family:var(--mono);font-size:10.5px;line-height:1.55}
+
+/* modal */
+#mwrap{display:none;position:fixed;inset:0;background:rgba(4,6,10,.6);z-index:240;align-items:center;justify-content:center}
+#mbox{width:min(460px,calc(100vw - 24px));max-height:78vh;overflow:auto;background:var(--panel2);
+  border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+#mbox h3{font-family:var(--serif);font-weight:400;font-size:20px;margin-bottom:10px;overflow-wrap:anywhere}
+#mbox h3 .mono{font-size:15px}
+#mbox p{color:var(--ink);font-family:var(--mono);font-size:12.5px;line-height:1.7}
+.mrow{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.merr{font-family:var(--mono);font-size:11.5px;color:var(--bad);margin-top:10px;overflow-wrap:anywhere;display:none}
+.parow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:9px;
+  padding:9px 12px;margin-top:8px;font-family:var(--mono);font-size:12px;cursor:pointer}
+.parow:hover{border-color:var(--mut)}
+.parow .mut{font-size:11px}
+.parow em{font-style:normal;margin-left:auto;font-size:10px;letter-spacing:.06em;color:var(--warn);
+  border:1px solid rgba(232,160,32,.4);border-radius:5px;padding:1px 6px;white-space:nowrap}
+.parow.dim{opacity:.45;cursor:default}
+.parow.dim:hover{border-color:var(--line)}
+.mconfirm{margin-top:12px}
+.mconfirm label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.mconfirm input{width:100%;font-family:var(--mono);font-size:12px;background:var(--bg);color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;padding:6px 9px}
+
+/* toast */
+#toast{display:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:400;
+  max-width:calc(100vw - 24px);background:var(--panel3);border:1px solid var(--line);border-radius:9px;
+  padding:8px 14px;font-family:var(--mono);font-size:11.5px;color:var(--ink);box-shadow:0 8px 28px rgba(0,0,0,.5);
+  white-space:nowrap;overflow-wrap:anywhere}
+
+#ph-health{display:none}
+footer{margin-top:34px;font-family:var(--mono);font-size:11px;color:var(--faint)}
+footer a{color:var(--mut)}
+
+/* ── the single phone media query (≤480) ──────────────────────────────── */
+@media (max-width:480px){
+  .wrap{padding:0 12px 56px}
+  h1{font-size:24px}
+  nav,#timeTxt{display:none}
+  header{padding-bottom:10px}
+  .brandrow{align-items:flex-start;flex-wrap:nowrap}
+  .hright{flex-direction:column;align-items:flex-end}
+  .chip{font-size:9px;padding:2px 8px}
+  .strip{display:none}
+  .glances{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+  .glance{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;min-width:0}
+  .glance:active{border-color:var(--mut)}
+  .glab{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+    display:flex;justify-content:space-between;gap:6px}
+  .glab::after{content:"▾";letter-spacing:0}
+  .glance.open .glab::after{content:"▴"}
+  .gval{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px;line-height:1.55;overflow-wrap:anywhere}
+  .gval.b{color:var(--ink);font-weight:700}
+  .gval .hdot{margin-right:5px;vertical-align:0}
+  .msec{display:none}
+  .msec.phone-open{display:block}
+  #ph-health.phone-open{display:block;margin-top:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:6px 10px}
+  #ph-health .stripin{display:block;padding:2px 0}
+  #ph-health .hcell{flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;
+    padding:9px 4px;border-bottom:1px solid var(--line);border-radius:0}
+  #ph-health .hcell:last-child{border-bottom:none}
+  #ph-health .hval{padding-left:0;margin-left:auto}
+  .firebar{margin-top:12px}
+  .wgrid{grid-template-columns:1fr;gap:6px}
+  .wcell{display:flex;align-items:baseline;gap:10px}
+  .wd{flex:none}
+  .wv,.wv2{margin-top:0}
+  .wv2::before{content:"· "}
+  .seclabel{margin:20px 0 10px}
+  #mwrap{align-items:flex-start}
+  #mbox{margin-top:12px;max-height:60vh}
+  #toast{white-space:normal}
+}
+</style>
+</head>
+<body>
+<div class="spine"></div>
+<div class="wrap">
+
+  <header>
+    <div class="brandrow">
+      <div><h1>Prediction<span class="em">Desk</span></h1></div>
+      <div class="hright">
+        <span class="chip c-locked" data-pop="locked" id="lockChip">LIVE TRADING: …</span>
+        <span id="timeTxt" data-act="timeswap"></span>
+        <span class="asofrow"><span id="asof">loading…</span><button class="btn quiet" data-act="refresh" id="refreshBtn">↻ refresh</button></span>
+      </div>
+    </div>
+    <nav>
+      <a class="here" href="/">Overview</a><a href="/forward.html">Forward</a><a href="/live.html">Live</a><a href="/backtest.html">Backtest</a><a href="/opportunities.html">Opportunities</a><a href="/ops">System</a>
+    </nav>
+  </header>
+
+  <div id="errbar"></div>
+
+  <div class="strip"><div class="stripin" id="stripCells"></div></div>
+
+  <section class="glances" id="glances"></section>
+  <div id="ph-health" class="phsec"><div class="stripin" id="phCells"></div></div>
+
+  <div class="msec" id="sec-firebar"><div class="firebar" id="firebar"></div></div>
+
+  <section class="msec" id="sec-cards"><div id="cards"></div></section>
+
+  <section class="msec" id="sec-activity">
+    <div class="seclabel">Recent activity <span class="sub" id="feedSub"></span></div>
+    <div id="feed"></div>
+  </section>
+
+  <section class="msec" id="sec-week">
+    <div class="seclabel">This week <span class="sub">· realized, UTC days</span></div>
+    <div class="wgrid" id="week"></div>
+  </section>
+
+  <footer><a href="/index.html">classic overview</a> · <a href="/ops">system</a> · <a href="/glossary">glossary</a> · auto-refresh 60 s · all times UTC unless labeled</footer>
+</div>
+
+<div id="back"></div>
+<div id="pop" role="dialog"></div>
+<div id="mwrap"><div id="mbox" role="dialog"></div></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+window.__errs=[];window.addEventListener('error',function(e){window.__errs.push(String(e.message||e))});
+
+/* ════ state (hydrated from the APIs — no figures live in this file) ════ */
+let H=null, EV=null, WK=null;          // /api/health · /api/events · /api/week
+let lastOk=0, fetching=false, timePrimaryUTC=true;
+const REFRESH_S=60, STALE_S=150;
+
+/* ════ helpers ════ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const MINUS='−';
+const money=v=>v<0?MINUS+'$'+Math.abs(v).toFixed(2):'$'+v.toFixed(2);
+const grp=n=>String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const qty=v=>{const r=Math.round(v*100)/100;return String(r)};
+const plural=(n,w)=>n+' '+(n===1?w:w+'s');
+function ageTxt(s){if(s==null)return '—';s=Math.round(s);if(s<90)return s+' s';if(s<5400)return Math.round(s/60)+' m';if(s<172800)return Math.floor(s/3600)+' h '+Math.round(s%3600/60)+' m';return Math.floor(s/86400)+' d'}
+function spanTxt(s){if(s==null)return '—';s=Math.round(s);if(s%3600===0&&s>=3600)return (s/3600)+' h';if(s%60===0&&s>=60)return (s/60)+' m';return s+' s'}
+function durTxt(s){const m=Math.round(s/60),h=Math.floor(m/60);return h>0?h+' h '+(m%60)+' m':m+' m'}
+const pad=n=>String(n).padStart(2,'0');
+function hmUTC(ts){const d=new Date(ts*1000);return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())}
+function hmRound(ts){return hmUTC(Math.round(ts/60)*60)}   /* fire windows land on whole minutes */
+function hmsUTC(ts){const d=new Date(ts*1000);return hmUTC(ts)+':'+pad(d.getUTCSeconds())}
+function mdUTC(ts){const d=new Date(ts*1000);return pad(d.getUTCMonth()+1)+'-'+pad(d.getUTCDate())}
+function stampUTC(ts){return mdUTC(ts)+' '+hmUTC(ts)}
+const nowS=()=>Date.now()/1000;
+const isPhone=()=>matchMedia('(max-width:480px)').matches;
+const canHover=()=>matchMedia('(hover:hover)').matches;
+function rowsHTML(rows){return rows.map(r=>'<div class="pr"><span class="pk">'+r[0]+'</span><span class="pv">'+r[1]+'</span></div>').join('')}
+
+/* ════ derivations (all from H/EV/WK) ════ */
+function thr(key){return (H&&H.thresholds&&H.thresholds[key])||null}
+function thrTxt(key,extra){const t=thr(key);if(!t)return '—';
+  return 'amber &gt; '+spanTxt(t[0])+' · red &gt; '+spanTxt(t[1])+(extra?' — '+extra:'')}
+function stAge(age,key){const t=thr(key);if(age==null||!t)return 'na';return age>t[1]?'bad':age>t[0]?'warn':'ok'}
+const chipCls={'PAPER':'c-paper','LIVE':'c-live','LIVE-LOCKED':'c-locked','OFF':'c-off'};
+const stRank={ok:0,na:1,warn:2,bad:3};
+function faceWord(st){return st==='ok'?'alive':st==='warn'?'stale':st==='bad'?'down':'—'}
+
+function substrateRows(){return ((H.calib||{}).rows||[]).filter(r=>r.kind==='series')}
+function worstSubstrate(){const rows=substrateRows();if(!rows.length)return null;
+  return rows.reduce((w,r)=>stRank[r.chip]>=stRank[w.chip]?r:w,rows[0])}
+
+function healthCells(){
+  const c=H.capture||{},d=H.driver||{},e=H.exitmon||{},q=H.quota||{};
+  const sub=worstSubstrate();
+  const subSt=sub?(sub.chip==='ok'?'ok':sub.chip==='warn'?'warn':sub.chip==='bad'?'bad':'na'):'na';
+  const qa=thr('quota_pct');
+  const qSt=(q.pct==null||!qa)?'na':(q.pct>=qa[0]?'warn':'ok');
+  return [
+    {key:'capture',label:'Capture',st:stAge(c.hb_age_s,'capture_hb'),val:faceWord(stAge(c.hb_age_s,'capture_hb'))+' '+ageTxt(c.hb_age_s)},
+    {key:'driver',label:'Driver',st:stAge(d.hb_age_s,'driver_hb'),val:faceWord(stAge(d.hb_age_s,'driver_hb'))+' '+ageTxt(d.hb_age_s)},
+    {key:'exits',label:'Exits',st:stAge(e.lastpass_age_s,'exitmon_pass'),val:faceWord(stAge(e.lastpass_age_s,'exitmon_pass'))+' '+ageTxt(e.lastpass_age_s)},
+    {key:'substrate',label:'Forecast memory',st:subSt,val:sub&&sub.days30!=null?sub.days30+'/30 d':'n/a'},
+    {key:'quota',label:'Quota',st:qSt,val:q.pct!=null?Math.round(q.pct)+'%':'—'}
+  ];
+}
+function armSorted(){
+  const arms=(H.arms||[]).slice();
+  const rank=a=>a.enabled?0:(a.has_row?1:2);
+  return arms.map((a,i)=>[rank(a),i,a]).sort((x,y)=>x[0]-y[0]||x[1]-y[1]).map(x=>x[2]);
+}
+const activeArms=()=>(H.arms||[]).filter(a=>a.enabled);
+const ridingOpen=()=>(H.arms||[]).reduce((s,a)=>s+(!a.has_row?(a.open_positions||0):0),0);
+const openTotal=()=>(H.pnl||{}).open_total!=null?H.pnl.open_total:(H.arms||[]).reduce((s,a)=>s+(a.open_positions||0),0);
+function armById(n){return (H.arms||[]).find(a=>a.name===n)}
+function isTpsl(a){const p=a.params||{};return p.exit_tp!=null||p.exit_sl!=null}
+function exitWord(a){const p=a.params||{};
+  const parts=(p.exit_tp!=null?['+'+Math.round(p.exit_tp*100)+'%']:[]).concat(p.exit_sl!=null?[MINUS+Math.round(p.exit_sl*100)+'%']:[]);
+  return parts.join(' / ')}
+function nextDueTs(){const d=(H.driver||{}).next_due_in_s;return d==null?null:H.ts+d}
+function nextWindowText(a){
+  const sch=a.schedule||{};
+  if(sch.type==='release_times'){
+    const times=(sch.times_utc||[]).slice().sort();
+    const cur=hmUTC(nowS());
+    const nxt=times.find(t=>t>cur)||times[0];
+    return nxt?'the next window ('+nxt+' UTC)':'the next window';
+  }
+  return 'its next interval (~'+spanTxt(sch.secs!=null?sch.secs:21600)+')';
+}
+function lastFireEvent(){
+  const f=((EV||{}).events||[]).filter(e=>e.kind==='fire');
+  return f.find(e=>e.orders>0)||f[0]||null;
+}
+
+/* ════ popovers — every chip, cell and ⚠ explains itself (value+meaning+threshold+action+aka) ════ */
+function legendHTML(){
+  const items=[
+    ['c-off','OFF','enabled:false (or no config row) — never evaluates'],
+    ['c-paper','PAPER','enabled:true · live:false — orders simulated and recorded, no wallet touched'],
+    ['c-live','LIVE','live:true + LIVE_TRADING_ENABLED + valid PASS unlock scope — real orders'],
+    ['c-locked','LIVE-LOCKED','live:true but a gate is missing (env flag absent / PASS invalid) — evaluates, cannot send']
+  ];
+  return '<div class="plegend">'+items.map(i=>'<div class="ll"><span class="chip '+i[0]+'">'+i[1]+'</span><span class="ld">'+i[2]+'</span></div>').join('')+'</div>';
+}
+function passLine(p){
+  if(!p)return 'none';
+  const segs=[].concat(p.strategies||[]).concat(p.scope||[]);
+  let left='';
+  if(p.expiry){const ms=Date.parse(p.expiry+'T00:00:00Z')-Date.now();left=' · '+Math.max(0,Math.round(ms/86400000))+' d left'}
+  return 'PASS: '+esc(segs.join(' · '))+left;
+}
+function popHTML(id){
+  if(!H)return null;
+  const [kind,arg]=[id.split(':')[0],id.split(':').slice(1).join(':')];
+  const C=healthCells();
+  if(id==='locked'){
+    const L=H.live_lock||{};const armed=!!(L.env&&L.pass);
+    return '<div class="ptitle"><span class="chip '+(armed?'c-live':'c-locked')+'">LIVE TRADING: '+(armed?'ARMED':'LOCKED')+'</span></div>'+rowsHTML([
+      ['Value',armed?'ARMED — live-routed arms with PASS scope send real orders':'LOCKED — no real order can leave the desk; every arm routes paper'],
+      ['Meaning',armed?'both desk-wide live gates are open':'the desk-wide live gate is shut: '+(L.env?'':'the env flag is absent')+((!L.env&&!L.pass)?' AND ':'')+(L.pass?'':'there is no valid unlock scope')],
+      ['Gate','env flag '+(L.env?'set':'absent')+' · '+passLine(L.pass)],
+      ['Action','live-arming is excluded from this UI — the two-gate ritual stays manual, out of band'],
+      ['aka','<span class="mono">LIVE_TRADING_ENABLED</span> + <span class="mono">PASS.json</span> scope']]);
+  }
+  if(id==='hp-capture'){const c=H.capture||{};
+    return '<div class="ptitle"><span class="hdot '+C[0].st+'"></span>Capture</div>'+rowsHTML([
+      ['Value','heartbeat '+ageTxt(c.hb_age_s)+' ago · newest book file '+ageTxt(c.newest_parquet_age_s)+' ago'],
+      ['Meaning','the market-data capture process writes a heartbeat as it polls; this cell also watches the newest order-book file&rsquo;s age'],
+      ['Threshold','heartbeat '+thrTxt('capture_hb')+' · book file '+thrTxt('parquet')],
+      ['Action','check capture log / network'],
+      ['aka','capture heartbeat · newest parquet']]);}
+  if(id==='hp-driver'){const d=H.driver||{};
+    return '<div class="ptitle"><span class="hdot '+C[1].st+'"></span>Driver</div>'+rowsHTML([
+      ['Value','heartbeat '+ageTxt(d.hb_age_s)+' ago'],
+      ['Meaning','the strategy driver (fires the arms) writes a heartbeat between loop iterations; during a fire it legally pauses'],
+      ['Threshold',thrTxt('driver_hb')],
+      ['Action','check driver log; restart via <span class="mono">make ops-*</span>'],
+      ['aka','driver heartbeat']]);}
+  if(id==='hp-exits'){const e=H.exitmon||{};
+    return '<div class="ptitle"><span class="hdot '+C[2].st+'"></span>Exits</div>'+rowsHTML([
+      ['Value','last monitor pass '+ageTxt(e.lastpass_age_s)+' ago'],
+      ['Meaning','the exit monitor&rsquo;s last sweep over every positions file (paused arms included); paper TP/SL exits run only at fire time'],
+      ['Threshold',thrTxt('exitmon_pass')],
+      ['Action','check exitmonitor log'],
+      ['aka','exitmonitor pass']]);}
+  if(id==='hp-substrate'){const rows=substrateRows();const w=worstSubstrate();
+    return '<div class="ptitle"><span class="hdot '+C[3].st+'"></span>Forecast memory</div>'+rowsHTML([
+      ['Value',w?(w.days30!=null?w.days30+'/30 d covered · newest '+esc(w.newest||'—'):esc(w.value||'—'))+' (worst of '+rows.length+' substrate rows)':'no tenant substrate found'],
+      ['Meaning','the rolling forecast-error memory the pricing calibrates on — how wrong each engine has been lately'],
+      ['Threshold',thrTxt('substrate_series','arms refuse to trade')],
+      ['Action','run tenant daily build / wait for quota'],
+      ['aka','calibration substrate']]);}
+  if(id==='hp-quota'){const q=H.quota||{};const qa=thr('quota_pct');
+    return '<div class="ptitle"><span class="hdot '+C[4].st+'"></span>Quota</div>'+rowsHTML([
+      ['Value',grp(q.used||0)+'/'+grp(q.cap||0)+' weighted calls today ('+(q.pct!=null?Math.round(q.pct):'—')+'%)'],
+      ['Meaning','tenant forecast-API calls used today ('+esc(q.day||'')+', UTC)'],
+      ['Threshold','amber &ge; '+(qa?qa[0]:'—')+'% · no red — at the cap, cached pricing continues'],
+      ['Action','heavy backfills wait for tomorrow'],
+      ['aka','OM quota meter (<span class="mono">__meter__</span>)']]);}
+  if(kind==='chip'){const a=armById(arg);if(!a)return null;const m=a.mode;
+    const meaning={PAPER:'orders are simulated and recorded; no wallet is touched',
+      OFF:a.has_row?'not evaluating; no new entries at its schedule':'no config row — cannot evaluate or resume; positions settle-only',
+      LIVE:'real orders route to the exchange; the exit monitor manages positions',
+      'LIVE-LOCKED':'evaluates, cannot send — a live gate is missing'}[m]||'';
+    return '<div class="ptitle"><span class="mono">'+esc(a.name)+'</span><span class="chip '+chipCls[m]+'">'+m+'</span></div>'+rowsHTML([
+      ['Value',m],
+      ['Meaning',meaning],
+      ['Gate','mode = config <span class="mono">enabled</span> × <span class="mono">live</span> flag × desk gates; LIVE needs <span class="mono">LIVE_TRADING_ENABLED</span> + a valid <span class="mono">PASS</span> scope'],
+      ['Action',m==='PAPER'?'nothing — paper is this desk&rsquo;s operating mode; live-arming is excluded from this UI':(a.has_row?(a.enabled?'Pause on the card stops new entries at the next window':'Resume on the card opens NEW paper positions'):'see Pause all for the real-build flatten')],
+      ['aka','config keys <span class="mono">live</span>, <span class="mono">enabled</span> · gates <span class="mono">LIVE_TRADING_ENABLED</span>, <span class="mono">PASS</span>']
+    ])+legendHTML();}
+  if(kind==='since'){const a=armById(arg);if(!a||a.since==null)return null;
+    const pending=a.since>nowS();
+    const stamp=stampUTC(a.since)+' UTC';
+    return '<div class="ptitle"><span class="mono">'+esc(a.name)+'</span><span class="faint mono" style="font-size:10px">'+esc(sinceFace(a))+'</span></div>'+rowsHTML([
+      ['Value',pending?('flip effective at '+stamp+' — the driver reloads config each loop; the effect lands at that window'):((a.enabled?'in its current mode for '+durTxt(nowS()-a.since):'off')+' — unchanged since '+stamp)],
+      ['Meaning','how long this arm has been in its current enabled/live state'],
+      ['Source','the control audit log&rsquo;s last flip for this arm (seeded at bootstrap)'],
+      ['Action','pause/resume flips write the next audit entry and reset this clock'],
+      ['aka','audit JSONL <span class="mono">effective_at</span>']]);}
+  if(kind==='w-budget'){const a=armById(arg);if(!a)return null;
+    return '<div class="ptitle"><span class="warnmk">⚠</span>no budget cap</div>'+rowsHTML([
+      ['Value','this arm has no spend ceiling'],
+      ['Meaning','nothing bounds what a single window can commit — <span class="mono">budget</span> is unset in its effective params'],
+      ['Threshold','none set'],
+      ['Action','set a budget in config'],
+      ['aka','<span class="mono">strategy_config</span> — budget field unset']]);}
+  if(kind==='w-riding'){const a=armById(arg);if(!a)return null;
+    return '<div class="ptitle"><span class="warnmk">⚠</span>'+a.open_positions+' positions riding</div>'+rowsHTML([
+      ['Value',a.open_positions+' open positions riding to resolution'],
+      ['Meaning','they sit on a retired arm — resume impossible, no config row; positions settle-only'],
+      ['Threshold','none — they only close when each market resolves'],
+      ['Action','see Pause all for the real-build flatten'],
+      ['aka','positions glob <span class="mono">'+esc(a.name)+'</span> (no config row)']]);}
+  if(id==='feed-zero'){
+    return rowsHTML([
+      ['Value','evaluated 0 markets at fire time'],
+      ['Meaning','the arm priced no candidates this pass — substrate gate, empty universe window, or a capture gap'],
+      ['Action','check driver + capture logs'],
+      ['aka','<span class="mono">n_views</span> = 0/null on the fire line']]);}
+  if(kind==='wk'){const d=((WK||{}).days||[]).find(x=>x.date===arg);if(!d)return null;
+    const attribution=Object.keys(d.by_arm||{}).map(k=>money(d.by_arm[k])+' from <span class="mono">'+esc(k)+'</span>').join(' · ');
+    return rowsHTML([
+      ['Value',money(d.realized)+' realized on '+esc(d.date)+' · '+plural(d.closed,'closed row')],
+      ['Meaning',attribution||'no rows settled'],
+      ['Threshold','none — settled P&amp;L, informational'],
+      ['Action','details: the Forward / Live pages'],
+      ['aka','<span class="mono">trades.jsonl</span> daily aggregate (UTC)']]);}
+  return null;
+}
+
+/* ════ render ════ */
+function sinceFace(a){
+  if(a.since==null)return '';
+  if(a.since>nowS())return (a.enabled?'on':'off')+' at '+hmUTC(a.since)+' UTC';
+  return a.enabled?'up '+durTxt(nowS()-a.since):'off since '+stampUTC(a.since)+' UTC';
+}
+function renderLock(){
+  const L=(H||{}).live_lock||{};const armed=!!(L.env&&L.pass);
+  const el=$('#lockChip');
+  el.textContent='LIVE TRADING: '+(armed?'ARMED':'LOCKED');
+  el.className='chip '+(armed?'c-live':'c-locked');
+}
+function renderTime(){
+  const d=new Date();
+  const utc=pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+' UTC';
+  let loc='';
+  try{loc=d.toLocaleTimeString('en-GB',{timeZone:'Asia/Dubai',hour:'2-digit',minute:'2-digit'})+' Dubai'}catch(e){loc=''}
+  $('#timeTxt').innerHTML=timePrimaryUTC?('<b>'+utc+'</b>'+(loc?' · '+loc:'')):('<b>'+loc+'</b> · '+utc);
+}
+function renderAsOf(){
+  const el=$('#asof');
+  if(!H){el.textContent=fetching?'refreshing…':'no data';el.className='';return}
+  const stale=(nowS()-lastOk)>STALE_S;
+  el.textContent='as of '+hmsUTC(H.ts)+' UTC'+(fetching?' · refreshing…':(stale?' · STALE':''));
+  el.className=stale&&!fetching?'stale':'';
+}
+function cellsHTML(){
+  return healthCells().map(h=>'<div class="hcell" data-pop="hp-'+h.key+'"><span class="hlabrow"><span class="hdot '+h.st+'"></span><span class="hlab">'+h.label+'</span></span><span class="hval">'+h.val+'</span></div>').join('');
+}
+function renderStrips(){$('#stripCells').innerHTML=cellsHTML();$('#phCells').innerHTML=cellsHTML();}
+function renderFirebar(){
+  const d=H.driver||{};
+  const nd=nextDueTs();
+  let txt;
+  if(nd==null)txt='Next fire — <span class="mut">no schedule due</span>';
+  else{
+    const left=nd-nowS();
+    txt='Next fire '+hmRound(nd)+' UTC · '+(left>0?'in '+durTxt(left):'due now')+' · '+activeArms().length+' arms evaluate';
+  }
+  if(d.fire_deadline_s!=null)txt+=' · fires take up to '+Math.round(d.fire_deadline_s/60)+' min';
+  if(H.fire_in_progress)txt='<span class="fip">fire in progress</span> · '+txt;
+  $('#firebar').innerHTML='<div class="fbtext">'+txt+'</div>'+
+    '<button class="btn quiet" data-act="pauseall">Pause all</button>';
+}
+function seg(s){return '<span class="seg">'+s+'</span>'}
+function ruleHTML(a){
+  if(!a.has_row)return seg('No config row — residue positions, settle-only');
+  const segs=String(a.rule||'').split(' · ').filter(Boolean).map(s=>seg(esc(s)));
+  if(a.enabled&&(a.params||{}).budget==null)
+    segs.push(seg('no budget cap <span class="warnmk" data-pop="w-budget:'+esc(a.name)+'">⚠</span>'));
+  return segs.join(' · ')||seg('—');
+}
+function todayHTML(a){
+  if(!a.has_row)
+    return seg(a.open_positions+' open positions riding to resolution <span class="warnmk" data-pop="w-riding:'+esc(a.name)+'">⚠</span>');
+  if(!a.enabled){
+    const lt=a.realized_total;
+    return seg('lifetime realized '+(lt==null?'—':'<span class="'+(lt<0?'neg':'')+'">'+money(lt)+'</span>'));
+  }
+  const t=a.today||{},s=[];
+  s.push(seg(plural(t.fires||0,'fire')+((t.zero_fires||0)>0?' ('+t.zero_fires+' evaluated 0 markets)':'')));
+  s.push(seg((t.evaluated||0)+' markets evaluated'));
+  if((t.orders||0)>0){
+    s.push(seg(plural(t.orders,'order')));
+    s.push(seg(qty(t.shares||0)+' sh'));
+  }else{
+    s.push(seg('0 orders'+((t.evaluated||0)>0?' (no edge cleared)':'')));
+  }
+  s.push(seg(plural(a.open_positions||0,'open position')));
+  if(t.realized)s.push(seg('realized <span class="'+(t.realized<0?'neg':'posv')+'">'+money(t.realized)+'</span>'));
+  return s.join(' · ');
+}
+function renderCards(){
+  $('#cards').innerHTML=armSorted().map(a=>{
+    const m=a.mode,active=!!a.enabled;
+    const btn=active?'<button class="btn" data-act="pause:'+esc(a.name)+'">Pause</button>'
+      :(a.has_row?'<button class="btn" data-act="resume:'+esc(a.name)+'">Resume</button>':'');
+    const err=a.last_error?'<div class="errline">last error '+stampUTC(a.last_error.ts||0)+' UTC — '+esc(a.last_error.error||'')+'</div>':'';
+    return '<article class="card'+(active?'':' dim')+'">'+
+      '<div class="chead"><span class="aname">'+esc(a.name)+'</span><span class="chip '+chipCls[m]+'" data-pop="chip:'+esc(a.name)+'">'+m+'</span>'+(a.since!=null?'<span class="msince" data-pop="since:'+esc(a.name)+'">'+esc(sinceFace(a))+'</span>':'')+'<span class="sp"></span>'+btn+'</div>'+
+      '<div class="rline">'+ruleHTML(a)+'</div>'+
+      '<div class="tline">'+todayHTML(a)+'</div>'+err+'</article>';
+  }).join('');
+}
+function feedRowHTML(e){
+  const today=mdUTC(e.ts)===mdUTC(nowS());
+  const t=(today?'':mdUTC(e.ts)+' ')+hmUTC(e.ts);
+  if(e.kind==='fire'){
+    if(!e.n_views)
+      return {t,html:esc(e.arm)+' fire — <i>evaluated 0 markets</i>',pop:'feed-zero'};
+    return {t,html:esc(e.arm+' fire: '+e.n_views+' markets evaluated → '+plural(e.orders,'order')+(e.orders>0?' ('+qty(e.filled)+' sh)':''))};
+  }
+  if(e.kind==='control'){
+    const eff=e.effective_at?' — effective '+hmUTC(e.effective_at)+' UTC':'';
+    const verb=e.action==='pause'?'paused':e.action==='resume'?'resumed':e.action==='pause-all'?'pause-all: paused':'control '+esc(e.action||'');
+    if(e.action==='rollback')return {t,html:'<span class="ctl">control write rolled back</span>'};
+    return {t,html:'<span class="ctl">'+verb+' '+esc(e.arm||'')+esc(eff)+'</span>'};
+  }
+  return {t,html:esc((e.program||'process')+' '+(e.event||''))};
+}
+function renderFeed(){
+  $('#feedSub').textContent='· newest first · times UTC';
+  const all=((EV||{}).events||[]);
+  const evs=all.slice(0,24);
+  $('#feed').innerHTML=(evs.length?evs.map(e=>{
+    const r=feedRowHTML(e);
+    return '<div class="frow"><span class="ft">'+r.t+'</span><span class="fx'+(r.pop?' u" data-pop="'+r.pop+'"':'"')+'>'+r.html+'</span></div>';
+  }).join(''):'<div class="frow"><span class="fx mut">no activity logged yet</span></div>')+
+  (all.length>evs.length?'<div class="frow"><span class="fx mut">… '+(all.length-evs.length)+' earlier events — full history in the logs</span></div>':'');
+}
+function renderWeek(){
+  const days=((WK||{}).days||[]);
+  $('#week').innerHTML=days.map((d,i)=>{
+    const today=i===days.length-1;
+    const has=d.closed>0;
+    const attrs=has?' data-pop="wk:'+esc(d.date)+'"':'';
+    const cls=d.realized<0?'lose':(d.realized>0?'win':'');
+    let v;
+    if(today)v='<div class="wv">realized '+money(d.realized)+'</div><div class="wv2">'+openTotal()+' open ('+ridingOpen()+' riding)</div>';
+    else if(has)v='<div><span class="wv hot '+cls+'">'+money(d.realized)+'</span></div>';
+    else v='<div class="wv">'+money(d.realized)+'</div>';
+    return '<div class="wcell'+(today?' today':'')+'"'+attrs+'><div class="wd">'+esc(d.date.slice(5))+'</div>'+v+'</div>';
+  }).join('');
+}
+function renderGlances(){
+  const C=healthCells();
+  const worst=C.find(h=>h.st==='bad')||C.find(h=>h.st==='warn');
+  const sys=worst?'<span class="hdot '+worst.st+'"></span>'+worst.label.toLowerCase()+' '+worst.val+' · rest green'
+    :'<span class="hdot ok"></span>all green';
+  const lf=lastFireEvent();
+  const lfT=lf?((mdUTC(lf.ts)===mdUTC(nowS())?'':mdUTC(lf.ts)+' ')+hmUTC(lf.ts)):'';
+  const lofTxt=lf?(lfT+': '+lf.arm+(lf.orders>0?' placed '+plural(lf.orders,'order')+' ('+qty(lf.filled)+' sh) from '+lf.n_views+' markets evaluated':' — evaluated 0 markets')):'no fires logged';
+  const rt=(H.pnl||{}).realized_today||0;
+  const nd=nextDueTs();
+  const riding=ridingOpen();
+  $('#glances').innerHTML=
+    '<div class="glance" data-glance="ph-health"><div class="glab">System OK?</div><div class="gval">'+sys+'</div></div>'+
+    '<div class="glance" data-glance="sec-cards,sec-week"><div class="glab">Strategies</div><div class="gval">'+activeArms().length+' active · '+(rt===0?'$0':money(rt))+' today</div><div class="gval b">'+openTotal()+' open'+(riding>0?' — '+riding+' riding on retired arm <span class="warnmk" data-pop="w-riding:'+esc((H.arms.find(a=>!a.has_row&&a.open_positions>0)||{}).name||'')+'">⚠</span>':'')+'</div></div>'+
+    '<div class="glance" data-glance="sec-activity"><div class="glab">Last fire</div><div class="gval">'+esc(lofTxt)+'</div></div>'+
+    '<div class="glance" data-glance="sec-firebar"><div class="glab">Next fire</div><div class="gval">'+(nd!=null?hmRound(nd)+' UTC · in '+durTxt(Math.max(0,nd-nowS())):'—')+'</div></div>';
+}
+function renderAll(){
+  if(!H)return;
+  renderLock();renderStrips();renderFirebar();renderCards();renderFeed();renderWeek();renderGlances();renderAsOf();
+}
+
+/* ════ hydration ════ */
+async function getJSON(path){
+  const r=await fetch(path,{cache:'no-store'});
+  if(!r.ok)throw new Error(path+' → '+r.status);
+  return r.json();
+}
+async function refreshAll(){
+  if(fetching)return;
+  fetching=true;renderAsOf();
+  try{
+    const [h,ev,wk]=await Promise.all([getJSON('/api/health'),getJSON('/api/events'),getJSON('/api/week')]);
+    if(h&&h.error)throw new Error(h.error);
+    H=h;EV=ev;WK=wk;lastOk=nowS();
+    $('#errbar').style.display='none';
+    renderAll();
+  }catch(e){
+    const eb=$('#errbar');
+    eb.textContent='refresh failed — '+String(e&&e.message||e)+(H?' · showing data as of '+hmsUTC(H.ts)+' UTC':'');
+    eb.style.display='block';
+  }finally{
+    fetching=false;renderAsOf();
+  }
+}
+
+/* ════ popover / sheet system (tap opens, tap-outside dismisses, hover works on desktop) ════ */
+const pop=$('#pop'),back=$('#back');
+let popPinned=false,popId=null;
+function openPop(id,anchor,pin){
+  const html=popHTML(id);if(!html)return;
+  pop.innerHTML=html;pop.style.display='block';popId=id;popPinned=!!pin;
+  if(isPhone()){
+    pop.classList.add('sheet');back.style.display='block';
+    pop.style.left='';pop.style.top='';pop.style.visibility='visible';
+  }else{
+    pop.classList.remove('sheet');back.style.display='none';
+    pop.style.visibility='hidden';pop.style.left='0px';pop.style.top='0px';
+    const w=pop.offsetWidth,hh=pop.offsetHeight,r=anchor.getBoundingClientRect();
+    let x=Math.min(Math.max(8,r.left),window.innerWidth-w-8);
+    let y=r.bottom+8;
+    if(y+hh>window.innerHeight-8)y=Math.max(8,r.top-hh-8);
+    pop.style.left=x+'px';pop.style.top=y+'px';pop.style.visibility='visible';
+  }
+}
+function closePop(){pop.style.display='none';back.style.display='none';popPinned=false;popId=null}
+
+/* toast */
+let toastTimer=null;
+function toast(msg){
+  const t=$('#toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.style.display='none'},3200);
+}
+
+/* ════ modals — wired to the REAL control API ════ */
+const mwrap=$('#mwrap'),mbox=$('#mbox');
+function openModal(html){closePop();mbox.innerHTML=html;mwrap.style.display='flex'}
+function closeModal(){mwrap.style.display='none'}
+function modalButtons(confirmLabel,act){
+  return '<div class="merr" id="merr"></div><div class="mrow"><button class="btn" data-act="mclose">Cancel</button>'+
+    '<button class="btn primary" id="mgo" data-act="'+act+'">'+confirmLabel+'</button></div>';
+}
+function showModalError(msg){const e=$('#merr');if(e){e.textContent=msg;e.style.display='block'}
+  const g=$('#mgo');if(g)g.disabled=false}
+function pauseModal(a){
+  const w=nextWindowText(a);
+  const open=a.open_positions||0;
+  let cons;
+  if(open>0&&!isTpsl(a))cons=open+' open position'+(open===1?'':'s')+' ride'+(open===1?'s':'')+' to settlement (this arm&rsquo;s designed exit).';
+  else if(open>0)cons=open+' open position'+(open===1?'':'s')+' keep'+(open===1?'s':'')+' their '+esc(exitWord(a))+' exits at fire time.';
+  else cons='0 open positions affected now.';
+  const fip=H.fire_in_progress?' <span style="color:var(--warn)">Fire in progress — the flip lands after it completes.</span>':'';
+  openModal('<h3>Pause <span class="mono">'+esc(a.name)+'</span></h3><p>Pause at '+esc(w)+'? No new entries. '+cons+fip+'</p>'+
+    modalButtons('Pause','do-pause:'+esc(a.name)));
+}
+function resumeModal(a){
+  const w=nextWindowText(a);
+  openModal('<h3>Resume <span class="mono">'+esc(a.name)+'</span></h3><p>Resume at '+esc(w)+'? Opens NEW '+(a.live?'':'paper ')+'positions.</p>'+
+    modalButtons('Resume','do-resume:'+esc(a.name)));
+}
+function typedConfirmModal(a){
+  openModal('<h3>Resume <span class="mono">'+esc(a.name)+'</span></h3>'+
+    '<p>This arm is <b>live-routed</b> — resuming restores configured real-money exposure when the desk gates open. Type the arm name to confirm.</p>'+
+    '<div class="mconfirm"><label>arm name</label><input id="confirmIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+esc(a.name)+'"></div>'+
+    '<div class="merr" id="merr"></div><div class="mrow"><button class="btn" data-act="mclose">Cancel</button>'+
+    '<button class="btn primary" id="mgo" data-act="do-resume-confirm:'+esc(a.name)+'" disabled>Resume</button></div>');
+  const inp=$('#confirmIn');
+  inp.addEventListener('input',()=>{$('#mgo').disabled=inp.value.trim()!==a.name});
+  inp.focus();
+}
+function pauseAllModal(){
+  const n=activeArms().length;
+  openModal('<h3>Pause all</h3><p>Desk-wide stop — pick a scope. '+n+' enabled arm'+(n===1?'':'s')+' affected.</p>'+
+    '<div class="parow" data-act="do-pauseall">Pause all <span class="mut">(no new entries)</span></div>'+
+    '<div class="parow dim">Halt <span class="mut">(also cancel resting live quotes)</span><em>live arms only — real build</em></div>'+
+    '<div class="parow dim">Flatten <span class="mut">(exit everything at touch)</span><em>live arms only — real build</em></div>'+
+    '<div class="merr" id="merr"></div><div class="mrow"><button class="btn" data-act="mclose">Cancel</button></div>');
+}
+async function ctl(path,body){
+  let r;
+  try{
+    r=await fetch(path,{method:'POST',cache:'no-store',
+      headers:{'X-Desk-Control':'1','Content-Type':'application/json'},
+      body:body?JSON.stringify(body):null});
+  }catch(e){return {status:0,j:{error:'network error — '+String(e&&e.message||e)}}}
+  let j={};try{j=await r.json()}catch(e){}
+  return {status:r.status,j};
+}
+function flipToast(out,verb){
+  const res=(out.results||[])[0];
+  if(out.noop)toast(verb+' — already in that state (no-op)');
+  else if(res&&res.effective_at_utc)toast(verb+' — effective '+res.effective_at_utc);
+  else toast(verb+' — applied');
+}
+async function runControl(act){
+  const [verb,arm]=[act.split(':')[0],act.split(':').slice(1).join(':')];
+  const g=$('#mgo');if(g){g.disabled=true;g.textContent='applying…'}
+  let res;
+  if(verb==='do-pause')res=await ctl('/api/strategy/'+encodeURIComponent(arm)+'/pause');
+  else if(verb==='do-resume')res=await ctl('/api/strategy/'+encodeURIComponent(arm)+'/resume');
+  else if(verb==='do-resume-confirm'){
+    const typed=($('#confirmIn')||{}).value||'';
+    res=await ctl('/api/strategy/'+encodeURIComponent(arm)+'/resume',{confirm_name:typed.trim()});
+  }
+  else if(verb==='do-pauseall')res=await ctl('/api/stack/pause-all');
+  else return;
+  if(res.status===200){
+    closeModal();
+    flipToast(res.j,verb==='do-pauseall'?'pause-all':(verb==='do-pause'?'paused '+arm:'resumed '+arm));
+    await refreshAll();
+    return;
+  }
+  if(res.status===409&&res.j&&res.j.expect&&res.j.expect.confirm_name){
+    const a=armById(arm);
+    if(a){typedConfirmModal(a);return}
+  }
+  const msg=res.status===429?('debounced — a control action just ran; retry in '+(res.j.retry_after_s||2)+' s')
+    :(res.j&&res.j.error)?('['+res.status+'] '+res.j.error):('request failed ('+(res.status||'network')+')');
+  if(g)g.textContent=verb==='do-pauseall'?'Pause all':(verb.indexOf('pause')>=0?'Pause':'Resume');
+  showModalError(msg);
+}
+
+/* ════ interactions ════ */
+document.addEventListener('click',e=>{
+  const act=e.target.closest('[data-act]');
+  if(act&&!act.disabled){
+    const v=act.dataset.act;
+    if(v==='timeswap'){timePrimaryUTC=!timePrimaryUTC;renderTime();return}
+    if(v==='refresh'){refreshAll();return}
+    if(v==='pauseall'){pauseAllModal();return}
+    if(v==='mclose'){closeModal();return}
+    if(v.startsWith('do-')){runControl(v);return}
+    if(v.startsWith('pause:')){const a=armById(v.slice(6));if(a)pauseModal(a);return}
+    if(v.startsWith('resume:')){const a=armById(v.slice(7));if(a)resumeModal(a);return}
+  }
+  if(e.target===mwrap){closeModal();return}
+  const tp=e.target.closest('[data-pop]');
+  if(tp){
+    if(popPinned&&popId===tp.dataset.pop)closePop();
+    else openPop(tp.dataset.pop,tp,true);
+    return;
+  }
+  if(e.target.closest('#pop'))return;
+  if(pop.style.display==='block')closePop();
+  const g=e.target.closest('[data-glance]');
+  if(g){
+    g.classList.toggle('open');
+    g.dataset.glance.split(',').forEach(id=>{const s=document.getElementById(id);if(s)s.classList.toggle('phone-open')});
+  }
+});
+document.addEventListener('mouseover',e=>{
+  if(!canHover()||popPinned||isPhone())return;
+  const t=e.target.closest('[data-pop]');
+  if(t){if(popId!==t.dataset.pop||pop.style.display!=='block')openPop(t.dataset.pop,t,false)}
+  else if(pop.style.display==='block'&&!e.target.closest('#pop'))closePop();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(mwrap.style.display==='flex')closeModal();else closePop()}
+});
+
+/* ════ boot ════ */
+renderTime();
+refreshAll();
+setInterval(refreshAll,REFRESH_S*1000);
+setInterval(()=>{renderTime();renderAsOf()},10000);
+
+/* dev-only QA hook (no effect without #check) */
+(function(){
+  if(location.hash!=='#check')return;
+  const report=()=>{
+    const de=document.documentElement;
+    const chk={vw:window.innerWidth,scrollW:de.scrollWidth,clientW:de.clientWidth,
+      overflow:de.scrollWidth>de.clientWidth,
+      glances:[...document.querySelectorAll('.glance')].filter(x=>x.offsetParent!==null).length,
+      stripVisible:getComputedStyle(document.querySelector('.strip')).display!=='none',
+      cards:document.querySelectorAll('#cards .card').length,
+      feedRows:document.querySelectorAll('#feed .frow').length,
+      weekDays:document.querySelectorAll('#week .wcell').length,
+      hydrated:!!H,errs:window.__errs.length};
+    de.setAttribute('data-check',JSON.stringify(chk).replace(/"/g,"'"));
+  };
+  setInterval(report,500);
+})();
+</script>
+</body>
+</html>

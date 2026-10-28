@@ -1,0 +1,62 @@
+{
+ "_note": "Config overlay for the strategy registry. Each row overlays enabled/schedule/params onto a discovered base (a builtin or a tenant manifest, matched by `name`, or by `strategy` for a variant with its own name). `config_hash` seals the row's EFFECTIVE behavior {name, strategy, effective schedule, {**base defaults, **row params}, base_version} (registry.seal_hash): the loader recomputes it and REFUSES the row on mismatch, when unsealed, or when its base tenant is absent \u2014 silent param OR base-default drift can never masquerade as the registered strategy. Reseal after any such change: python3 -m desk.signals.registry reseal --write.",
+ "strategies": [
+  {
+   "name": "calendar",
+   "strategy": "calendar",
+   "enabled": false,
+   "schedule": {
+    "type": "interval",
+    "secs": 21600
+   },
+   "params": {
+    "qty": 50.0,
+    "n_markets": 3,
+    "min_snaps": 2,
+    "mode": "taker",
+    "maker_validity_s": 3600
+   },
+   "registered_at": "2026-10-25",
+   "config_hash": "510490232aaad920f9e4db1a6a9811edb05150e87210949fff8c47493157ca72"
+  },
+  {
+   "name": "sample_weather",
+   "strategy": "sample_weather",
+   "enabled": false,
+   "schedule": {
+    "type": "interval",
+    "secs": 21600
+   },
+   "params": {
+    "model": "gfs_global",
+    "entry_threshold": 0.2,
+    "lead_min": 1,
+    "lead_max": 5,
+    "qty": 5.0,
+    "min_price": 0.05,
+    "mode": "taker",
+    "budget": 100.0
+   },
+   "registered_at": "2026-10-25",
+   "config_hash": "72742d70328437ba6824ad5728bbb98239dc62fb1d52b0b7658294033e367960"
+  },
+  {
+   "name": "sample_calendar",
+   "strategy": "sample_calendar",
+   "enabled": true,
+   "schedule": {
+    "type": "interval",
+    "secs": 21600
+   },
+   "params": {
+    "qty": 50.0,
+    "n_markets": 3,
+    "min_snaps": 2,
+    "mode": "taker",
+    "maker_validity_s": 3600
+   },
+   "registered_at": "2026-10-27",
+   "config_hash": "db80476c3fb28de3413314eb348b481d5838e9a7c1ffa03afab803c6a1061839"
+  }
+ ]
+}

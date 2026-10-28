@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PredictionDesk · Polymarket Trade Ideas</title>
+<style>
+  :root{
+    --bg:#08090c; --bg2:#0c0e13; --panel:#11141b; --panel2:#161a23; --raise:#1b202b;
+    --line:#242a36; --line2:#2f3744; --ink:#e9edf4; --ink2:#c3cbd9; --muted:#838da0; --faint:#5a6273;
+    --signal:#e3b341; --signal-dim:#7d6526; --bull:#43c08c; --bear:#e2604b; --watch:#d9a441; --blue:#6aa6ff;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono","Menlo","JetBrains Mono","Roboto Mono",monospace;
+    --sans:-apple-system,"Avenir Next","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;
+    background:
+      radial-gradient(1100px 600px at 80% -10%, rgba(227,179,65,.06), transparent 60%),
+      radial-gradient(900px 500px at 0% 0%, rgba(106,166,255,.05), transparent 55%),
+      var(--bg);
+    background-attachment:fixed;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+    background-image:radial-gradient(rgba(255,255,255,.045) 1px, transparent 1px);background-size:22px 22px;}
+  .wrap{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:34px 22px 120px}
+
+  .mast{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:8px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--signal)}
+  .mast h1{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.05;margin:6px 0 0;letter-spacing:-.01em}
+  .mast .meta{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:right;line-height:1.7}
+  .live{display:inline-flex;align-items:center;gap:6px;color:var(--bull)}
+  .live i{width:7px;height:7px;border-radius:50%;background:var(--bull);animation:pulse 2.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(67,192,140,.5)}70%{box-shadow:0 0 0 7px rgba(67,192,140,0)}100%{box-shadow:0 0 0 0 rgba(67,192,140,0)}}
+
+  .lede{margin:22px 0 8px;animation:rise .6s both .05s}
+  .lede h2{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.38;margin:0;color:#f4f1e9;
+    border-left:2px solid var(--signal);padding-left:16px}
+  .bl{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:7px}
+  .bl li{position:relative;padding-left:20px;color:var(--ink2);font-size:13.5px}
+  .bl li::before{content:"";position:absolute;left:2px;top:9px;width:6px;height:6px;background:var(--signal);transform:rotate(45deg);opacity:.8}
+
+  .sec{margin-top:34px;animation:rise .6s both}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:10px}
+  .sec-head .k{font-family:var(--mono);font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--signal)}
+  .sec-head h3{font-family:var(--serif);font-weight:500;font-size:17px;margin:0;color:var(--ink)}
+  .sec-head .n{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .sec-head .rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+
+  .row{border:1px solid var(--line);border-radius:12px;margin:9px 0;background:linear-gradient(180deg,var(--panel),var(--bg2));overflow:hidden;transition:border-color .2s}
+  .row:hover{border-color:var(--line2)}
+  .row.open{border-color:var(--signal-dim)}
+  .head{display:flex;align-items:center;gap:15px;padding:14px 16px;cursor:pointer;user-select:none}
+  .conv{flex:0 0 auto;width:52px;text-align:center}
+  .conv .num{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1;letter-spacing:-.02em}
+  .conv .bar{height:3px;border-radius:2px;background:var(--line2);margin-top:5px;overflow:hidden}
+  .conv .bar i{display:block;height:100%;border-radius:2px;transform-origin:left;transform:scaleX(0);animation:fill .9s both .2s}
+  .conv .cap{font-family:var(--mono);font-size:8px;letter-spacing:.18em;color:var(--faint);margin-top:4px}
+  @keyframes fill{to{transform:scaleX(var(--p,0))}}
+  .htext{flex:1;min-width:0}
+  .htext .t{font-family:var(--serif);font-size:16.5px;color:var(--ink);line-height:1.25}
+  .htext .o{color:var(--muted);font-size:12.5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:4px;margin-right:8px;vertical-align:2px;background:var(--raise);color:var(--signal);border:1px solid var(--signal-dim)}
+  .metric{flex:0 0 auto;width:130px;text-align:right}
+  .metric .big{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--bull);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .metric .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase;margin-top:3px}
+  .chev{flex:0 0 12px;color:var(--faint);transition:transform .22s;font-size:12px}
+  .row.open .chev{transform:rotate(90deg);color:var(--signal)}
+
+  .body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .28s ease}
+  .row.open .body{grid-template-rows:1fr}
+  .body>div{overflow:hidden}
+  .inner{padding:6px 18px 20px;border-top:1px solid var(--line)}
+  .blk{margin:16px 0}
+  .blk>.lab{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .prose{color:var(--ink2);font-size:13.5px}
+
+  .fair{background:linear-gradient(180deg,rgba(67,192,140,.07),rgba(67,192,140,.02));border:1px solid rgba(67,192,140,.28);border-left:3px solid var(--bull);border-radius:10px;padding:13px 16px}
+  .fair .lab{color:#86e3b8}
+  .fair .ex{font-size:14.5px;line-height:1.66;color:#eaf6ef}
+  .how{background:linear-gradient(180deg,rgba(227,179,65,.09),rgba(227,179,65,.02));border:1px solid rgba(227,179,65,.32);border-left:3px solid var(--signal);border-radius:10px;padding:14px 17px}
+  .how .lab{color:#ecd9a0}
+  .how .ctx{font-size:13.5px;line-height:1.62;color:#cdbf9d;margin-bottom:9px}
+  .how ol{list-style:none;counter-reset:st;margin:0;padding:0}
+  .how li{counter-increment:st;position:relative;padding-left:34px;font-size:14px;line-height:1.62;color:#f2ead8;margin:7px 0}
+  .how li::before{content:counter(st,decimal-leading-zero);position:absolute;left:0;top:3px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--signal);border:1px solid rgba(227,179,65,.4);border-radius:5px;padding:1px 5px;background:rgba(227,179,65,.07)}
+  .mkts{display:flex;flex-wrap:wrap;gap:8px}
+  .mlink{display:inline-flex;align-items:center;gap:9px;background:#12161d;border:1px solid var(--line);border-radius:9px;padding:8px 12px;text-decoration:none;transition:border-color .15s,box-shadow .15s}
+  .mlink:hover{border-color:var(--signal);box-shadow:0 0 0 1px rgba(227,179,65,.25),0 4px 14px rgba(0,0,0,.4)}
+  .mlink .ml{font-size:12.5px;color:#dfe6ee;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mlink .mn{font-family:var(--mono);font-size:10.5px;color:var(--signal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px;border-left:1px solid var(--line);padding-left:9px}
+  .mlink .ar{font-family:var(--mono);font-size:12px;color:var(--signal)}
+
+  .gauge{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:16px 18px 14px}
+  .gauge .lab{color:var(--signal)}
+  .track{position:relative;height:34px;margin:26px 0 8px;border-radius:6px;background:linear-gradient(90deg,#191d26,#1d222c);border:1px solid var(--line2)}
+  .fairband{position:absolute;top:0;bottom:0;background:rgba(67,192,140,.22);border-left:1px solid rgba(67,192,140,.5);border-right:1px solid rgba(67,192,140,.5);animation:grow .8s both .3s;transform-origin:center}
+  .fairline{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--bull);box-shadow:0 0 8px rgba(67,192,140,.6)}
+  .mkt{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--signal);box-shadow:0 0 8px rgba(227,179,65,.7)}
+  .fc{position:absolute;top:50%;width:7px;height:7px;border-radius:50%;background:#bff0d8;border:1px solid #0c0e13;transform:translate(-50%,-50%);opacity:.9}
+  .edgeShade{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(227,179,65,.10),rgba(227,179,65,.10) 5px,transparent 5px,transparent 10px)}
+  @keyframes grow{from{transform:scaleX(.2);opacity:0}to{transform:scaleX(1);opacity:1}}
+  .pin{position:absolute;font-family:var(--mono);font-size:10.5px;white-space:nowrap;transform:translateX(-50%)}
+  .pin.top{top:-20px}.pin.bot{bottom:-20px}
+  .pin.m{color:var(--signal)}.pin.f{color:var(--bull)}
+  .axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--faint);margin-top:14px}
+  .edgechip{display:inline-block;font-family:var(--mono);font-size:11px;color:#0c0e13;background:var(--signal);border-radius:4px;padding:2px 8px;font-weight:700;margin-top:8px}
+  .gnote{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  .negbar{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-bottom:8px}
+  .ndot{width:7px;height:7px;border-radius:50%;background:var(--bull);box-shadow:0 0 6px rgba(67,192,140,.7)}
+  .nstat{padding:1px 7px;border:1px solid var(--line2);border-radius:4px;color:var(--ink2)}
+  .nstat.fl{color:#f0a99f;border-color:rgba(226,96,75,.4)}
+  .ledger{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .lhead{display:grid;grid-template-columns:118px 64px 1fr;gap:10px;padding:7px 13px;font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);background:#0e1117;border-bottom:1px solid var(--line)}
+  .sdot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--bull);margin-right:6px;vertical-align:middle}
+  .lrow.flag .sdot{background:var(--bear)}
+  .lrow{display:grid;grid-template-columns:118px 64px 1fr;gap:10px;padding:9px 13px;border-top:1px solid var(--line);align-items:start;font-size:12.5px}
+  .lrow:first-child{border-top:0}
+  .lrow .ag{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+  .lrow .ag .pf{display:block;font-size:13px;color:var(--bull);font-weight:600;margin-top:2px}
+  .lchip{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.07em;text-align:center;padding:3px 0;border-radius:4px;height:fit-content}
+  .L-GATE{background:rgba(106,166,255,.13);color:#9fc3ff;border:1px solid rgba(106,166,255,.3)}
+  .L-DEBATE{background:rgba(201,139,255,.13);color:#d3acff;border:1px solid rgba(201,139,255,.3)}
+  .L-MONEY{background:rgba(67,192,140,.13);color:#86e3b8;border:1px solid rgba(67,192,140,.3)}
+  .L-DECISION{background:rgba(227,179,65,.14);color:#f0d28a;border:1px solid rgba(227,179,65,.34)}
+  .lrow .vd{color:var(--ink2)}
+  .lrow .vd b{color:var(--ink)}
+  .lrow.flag{background:rgba(226,96,75,.06)}
+  .lrow.flag .vd b{color:#f0a99f}
+  .lrow.judge{background:rgba(227,179,65,.06)}
+  .vflag{color:var(--bear);font-weight:700}
+  .vok{color:var(--bull)}
+
+  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cell{background:var(--panel2);padding:11px 13px}
+  .cell .k{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+  .cell .v{font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:4px;font-weight:600}
+  .cell .v.g{color:var(--bull)}
+
+  .ticket{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .leg{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 13px}
+  .leg .step{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--signal);text-transform:uppercase}
+  .leg .v{font-family:var(--mono);font-size:13px;color:var(--ink);margin-top:5px;line-height:1.5}
+  @media(max-width:620px){.ticket{grid-template-columns:1fr}.metric{display:none}.lrow,.lhead{grid-template-columns:90px 52px 1fr}}
+
+  .calc{font-size:12.5px;color:var(--ink2);background:#0e1117;border:1px dashed var(--line2);border-radius:8px;padding:10px 13px;line-height:1.6}
+  .calc b{color:var(--signal)}
+  .kv{display:flex;flex-wrap:wrap;gap:6px 22px}
+  .kv div{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .kv b{color:var(--ink);font-weight:600}
+  .chartwrap{background:#0e1014;border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center}
+  .chartwrap img{max-width:100%}
+  .explain{font-size:12px;color:var(--muted);border-left:2px solid var(--blue);padding:6px 12px;margin-top:8px;background:#0d1016;border-radius:0 6px 6px 0;line-height:1.5}
+  .risk{color:#e8b9af;font-size:13px}
+  .spec{font-family:var(--mono);font-size:11.5px;background:#0e1117;border:1px solid var(--line);border-radius:8px;padding:11px 13px;white-space:pre-wrap;color:var(--ink2);line-height:1.5}
+  .src a{font-family:var(--mono);color:var(--blue);text-decoration:none;font-size:12px;margin-right:14px}
+  .src a:hover{text-decoration:underline}
+
+  .stamp{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11.5px;border-radius:20px;padding:4px 12px;border:1px solid}
+  .stamp.pass{background:rgba(67,192,140,.1);border-color:rgba(67,192,140,.4);color:#86e3b8}
+  .stamp.warn{background:rgba(217,164,65,.1);border-color:rgba(217,164,65,.45);color:#f0d28a}
+  .stamp.fail{background:rgba(226,96,75,.1);border-color:rgba(226,96,75,.4);color:#f0a99f}
+  .checks{font-family:var(--mono);font-size:11px;color:var(--muted);margin:8px 0 0;padding-left:15px;line-height:1.6}
+
+  .banner{background:rgba(226,96,75,.1);border:1px solid rgba(226,96,75,.4);color:#f3c8c0;border-radius:10px;padding:12px 16px;margin:18px 0;font-size:13.5px}
+  .banner b{color:#f0a99f}
+
+  .rejected{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;animation:rise .6s both}
+  .rejected .sec-head .k{color:var(--bear)}
+  .rejected .sec-head h3{color:var(--ink2)}
+  details.rej{margin-top:8px}
+  details.rej summary{font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer;list-style:none;padding:4px 0}
+  details.rej summary::-webkit-details-marker{display:none}
+  details.rej summary::before{content:"▸ ";color:var(--bear)}
+  details.rej[open] summary::before{content:"▾ "}
+  .rej-list{margin-top:6px;display:grid;gap:5px}
+  .rej-item{font-size:12.5px;color:var(--muted);padding:7px 12px;border-left:2px solid rgba(226,96,75,.35);background:#0d0f14;border-radius:0 6px 6px 0}
+  .rej-item b{color:#dca89f;font-weight:600}
+
+  .foot{margin-top:36px;border-top:1px solid var(--line);padding-top:12px;font-size:11px;color:var(--faint);font-family:var(--mono);line-height:1.7}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mast">
+    <div><div class="brand">PredictionDesk · Polymarket Screen</div><h1>Trade Ideas</h1></div>
+    <div class="meta" id="meta"></div>
+  </div>
+  <div id="banner"></div>
+  <div class="lede" id="lede"></div>
+  <div id="sections"></div>
+  <div id="rejected"></div>
+  <div class="foot">Every idea shown passed an independent fact-check; conviction is the deliberation panel's judge call.
+    Directional ideas are bets — you can lose the stake. Prices move; re-check before trading. Not financial advice.</div>
+</div>
+<script>
+const DATA = /*__EMBEDDED_DATA__*/ {};
+const esc=s=>(s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const shortDate=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||"");if(m)return `${MON[+m[2]-1]} ${+m[3]}`;const t=(s||"").trim();return t.length>14?t.slice(0,12)+"…":t;};
+const convColor=c=>c>=70?"var(--bull)":c>=45?"var(--watch)":"var(--faint)";
+function pct(v){ if(v==null) return null; if(typeof v==="number") return v<=1?v*100:v;
+  const m=String(v).match(/-?\d+(\.\d+)?/); if(!m) return null; let n=parseFloat(m[0]); return n<=1?n*100:n; }
+
+function gaugeHTML(del){
+  const pm=pct(del.p_market), pf=pct(del.p_fair_agg);
+  if(pm==null||pf==null) return "";
+  const disp=pct(del.dispersion)||4;
+  const lo=Math.max(0,pf-disp), hi=Math.min(100,pf+disp);
+  const fcs=(del.forecasts||[]).map(f=>pct(f.p_fair)).filter(x=>x!=null);
+  const a=Math.min(pm,pf), b=Math.max(pm,pf);
+  let h=`<div class="blk gauge"><div class="lab">Mispricing — fair probability vs the market's price</div>
+    <div class="track">
+      <div class="edgeShade" style="left:${a}%;width:${b-a}%"></div>
+      <div class="fairband" style="left:${lo}%;width:${Math.max(1.2,hi-lo)}%"></div>
+      <div class="fairline" style="left:${pf}%"></div>
+      <div class="mkt" style="left:${pm}%"></div>`;
+  fcs.forEach(x=>{ h+=`<div class="fc" style="left:${x}%"></div>`; });
+  h+=`<div class="pin top m" style="left:${pm}%">market ${pm.toFixed(0)}%</div>
+      <div class="pin bot f" style="left:${pf}%">fair ${pf.toFixed(0)}%</div></div>
+    <div class="axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    <div class="edgechip">EDGE ${Math.abs(pf-pm).toFixed(0)} pts ${pf<pm?"· market too high → fade":"· market too low → buy"}</div>
+    <div class="gnote"><b style="color:var(--signal)">amber line</b> = market's implied probability ·
+      <b style="color:var(--bull)">green line + band</b> = our ensemble fair value ± spread ·
+      <b style="color:#bff0d8">white dots</b> = each forecaster's estimate. The hatched gap is the edge.</div></div>`;
+  return h;
+}
+
+function ledgerHTML(del){
+  const rows=[];
+  if(del.verifier) rows.push({ag:"Verifier",layer:"GATE",flag:false,
+    vd:`<b>${(del.verifier.status||"").toUpperCase()==="PASS"?'<span class="vok">facts verified</span>':'<span class="vflag">FAIL</span>'}</b> ${esc(del.verifier.note||"")}`});
+  if(del.evidence) rows.push({ag:"News / Evidence",layer:"GATE",flag:false,vd:esc(del.evidence.note||del.evidence)});
+  (del.forecasts||[]).forEach(f=>{const p=pct(f.p_fair);
+    rows.push({ag:`<span>${esc(f.lens||"forecaster")}</span>${p!=null?`<span class="pf">p≈${p.toFixed(0)}%</span>`:""}`,layer:"DEBATE",flag:false,vd:esc(f.reasoning||"")});});
+  (del.panel||[]).forEach(p=>rows.push({ag:esc(p.agent),layer:(p.layer||"DEBATE").toUpperCase(),flag:!!p.flag,
+    vd:`<b>${esc(p.verdict||"")}</b> ${esc(p.note||"")}`}));
+  const flags=rows.filter(r=>r.flag).length, nAg=rows.length+(del.judge?1:0);
+  let h=`<div class="blk"><div class="lab">Deliberation panel</div>
+    <div class="negbar"><span class="ndot"></span>negotiation complete
+      <span class="nstat">${nAg} agents</span><span class="nstat">${del.rounds?esc(del.rounds)+' round(s)':'1 round'}</span>
+      <span class="nstat ${flags?'fl':''}">${flags} flag${flags===1?'':'s'}</span></div>
+    <div class="ledger"><div class="lhead"><span>agent</span><span>layer</span><span>status · verdict</span></div>`;
+  rows.forEach(r=>{ h+=`<div class="lrow ${r.flag?'flag':''}"><div class="ag"><span class="sdot"></span>${r.ag}</div>
+    <div class="lchip L-${r.layer}">${esc(r.layer)}</div><div class="vd">${r.vd}</div></div>`; });
+  if(del.judge){const j=del.judge, dec=(j.decision||"").toUpperCase();
+    h+=`<div class="lrow judge"><div class="ag">⚖ Judge</div><div class="lchip L-DECISION">DECIDE</div>
+      <div class="vd"><b>${esc(dec)} · conviction ${esc(j.conviction)}</b> ${esc(j.rationale||"")}</div></div>`;}
+  h+=`</div>`;
+  if(del.contention) h+=`<div class="explain"><b>Key contention:</b> ${esc(del.contention)}</div>`;
+  h+=`</div>`;
+  return h;
+}
+
+function howHTML(hw){
+  // hw: {context:"one line on what the market(s) are about", steps:["do X","then Y"]} or a plain string
+  let inner="";
+  if(typeof hw==="string"){ inner=`<div class="ctx">${esc(hw)}</div>`; }
+  else{
+    if(hw.context) inner+=`<div class="ctx">${esc(hw.context)}</div>`;
+    if(hw.steps&&hw.steps.length) inner+=`<ol>`+hw.steps.map(s=>`<li>${esc(s)}</li>`).join("")+`</ol>`;
+  }
+  return `<div class="blk how"><div class="lab">How this trade works — plain words, step by step</div>${inner}</div>`;
+}
+function mktsHTML(ms){
+  return `<div class="blk"><div class="lab">The market${ms.length>1?"s":""} — open on Polymarket</div><div class="mkts">`+
+    ms.map(m=>`<a class="mlink" href="${esc(m.url)}" target="_blank" rel="noopener"><span class="ml">${esc(m.label)}</span>${m.note?`<span class="mn">${esc(m.note)}</span>`:""}<span class="ar">↗</span></a>`).join("")+
+    `</div></div>`;
+}
+function detail(it){
+  let h="";
+  if(it.how_it_works) h+=howHTML(it.how_it_works);
+  if(it.markets&&it.markets.length) h+=mktsHTML(it.markets);
+  if(it.fair_price_explainer) h+=`<div class="blk fair"><div class="lab">How I got the fair price — worked example</div><div class="ex">${esc(it.fair_price_explainer)}</div></div>`;
+  if(it.deliberation){ h+=gaugeHTML(it.deliberation); h+=ledgerHTML(it.deliberation); }
+  if(it.thesis) h+=`<div class="blk"><div class="lab">Thesis</div><div class="prose">${esc(it.thesis)}</div></div>`;
+  if(it.mispricing) h+=`<div class="blk"><div class="lab">Why there's a mispricing</div><div class="prose">${esc(it.mispricing)}</div></div>`;
+  const cells=[];
+  if(it.est_profit!=null) cells.push(`<div class="cell"><div class="k">Est. profit</div><div class="v g">${esc(it.est_profit)}</div></div>`);
+  if(it.annualized!=null) cells.push(`<div class="cell"><div class="k">Annualized</div><div class="v g">${esc(it.annualized)}</div></div>`);
+  if(it.resolution_date!=null) cells.push(`<div class="cell"><div class="k">Resolves</div><div class="v">${esc(shortDate(it.resolution_date))}${it.dte_days!=null?` · ${esc(it.dte_days)}d`:""}</div></div>`);
+  if(it.edge_net!=null) cells.push(`<div class="cell"><div class="k">Edge (net)</div><div class="v">${esc(it.edge_net)}</div></div>`);
+  if(cells.length) h+=`<div class="blk"><div class="lab">Return &amp; timing</div><div class="strip">${cells.join("")}</div></div>`;
+  if(it.return_calc) h+=`<div class="blk"><div class="lab">How the return is calculated</div><div class="calc">${esc(it.return_calc)}</div></div>`;
+  if(it.entry_level||it.exit_level){
+    h+=`<div class="blk"><div class="lab">Trade plan — rest as maker (0 fee)</div><div class="ticket">`;
+    if(it.entry_level) h+=`<div class="leg"><div class="step">① Enter</div><div class="v">${esc(it.entry_level)}</div></div>`;
+    if(it.exit_level) h+=`<div class="leg"><div class="step">② Exit / take-profit</div><div class="v">${esc(it.exit_level)}</div></div>`;
+    h+=`</div></div>`;
+  }
+  if(!it.deliberation){
+    const kv=[];
+    if(it.market_price!=null) kv.push(`<div>Market: <b>${esc(it.market_price)}</b></div>`);
+    if(it.fair_value!=null) kv.push(`<div>Fair value: <b>${esc(it.fair_value)}</b></div>`);
+    if(kv.length) h+=`<div class="blk"><div class="lab">Key numbers</div><div class="kv">${kv.join("")}</div></div>`;
+  }
+  // the CSS mispricing gauge supersedes the edge SVG; keep capacity charts (arb/bond)
+  const gaugeShown = it.deliberation && it.deliberation.p_market!=null && it.deliberation.p_fair_agg!=null;
+  if(it.chart && it.chart.data_uri && !(gaugeShown && it.chart.type==="edge")){
+    h+=`<div class="blk"><div class="chartwrap"><img src="${it.chart.data_uri}" alt="chart"/></div>`;
+    if(it.chart.explainer) h+=`<div class="explain">${esc(it.chart.explainer)}</div>`;
+    h+=`</div>`;
+  }
+  if(it.execution) h+=`<div class="blk"><div class="lab">Execution notes</div><div class="prose" style="font-family:var(--mono);font-size:12.5px">${esc(it.execution)}</div></div>`;
+  if(it.risk) h+=`<div class="blk"><div class="lab">Risk</div><div class="risk">${esc(it.risk)}</div></div>`;
+  if(it.backtest_spec) h+=`<div class="blk"><div class="lab">Backtest spec — for your framework</div><div class="spec">${esc(typeof it.backtest_spec==="string"?it.backtest_spec:JSON.stringify(it.backtest_spec,null,2))}</div></div>`;
+  if(it.sources&&it.sources.length) h+=`<div class="blk"><div class="lab">Sources</div><div class="src">`+it.sources.map(s=>`<a href="${esc(s.url||s)}" target="_blank" rel="noopener">${esc(s.label||s.url||s)}</a>`).join("")+`</div></div>`;
+  const v=it.verification, j=it.deliberation&&it.deliberation.judge;
+  if(j){const dec=(j.decision||"").toUpperCase(),cls=dec==="REJECT"?"fail":dec==="WATCH"?"warn":"pass";
+    h+=`<div class="blk"><span class="stamp ${cls}">⚖ ${esc(dec)} · conviction ${esc(j.conviction)} — independently fact-checked + panel-judged</span></div>`;}
+  else if(v){const st=(v.status||"").toUpperCase();const map={PASS:["pass","✓ Independently fact-checked"],UNVERIFIED:["warn","⚠ NOT independently verified — do not trust"],FAIL:["fail","✗ Fact-check FAILED"]};const x=map[st]||map.FAIL;
+    h+=`<div class="blk"><span class="stamp ${x[0]}">${x[1]}</span>`;
+    if(v.checks&&v.checks.length) h+=`<ul class="checks">`+v.checks.map(c=>`<li>${esc(c.name)}: ${esc(c.verdict)}${c.evidence?" — "+esc(c.evidence):""}</li>`).join("")+`</ul>`;
+    if(v.notes) h+=`<div class="checks">${esc(v.notes)}</div>`;
+    h+=`</div>`;}
+  return h;
+}
+
+function render(){
+  document.getElementById("meta").innerHTML = `<span class="live"><i></i>scan complete</span><br>${esc(DATA.generated_at||"")}`;
+  if(DATA.summary&&DATA.summary.banner) document.getElementById("banner").innerHTML=`<div class="banner">${esc(DATA.summary.banner)}</div>`;
+  if(DATA.summary){
+    document.getElementById("lede").innerHTML=`<h2>${esc(DATA.summary.headline||"")}</h2>`+
+      (DATA.summary.bottom_line?`<ul class="bl">`+DATA.summary.bottom_line.map(b=>`<li>${esc(b)}</li>`).join("")+`</ul>`:"");
+  }
+  const root=document.getElementById("sections"); let delay=.12;
+  (DATA.sections||[]).forEach(sec=>{
+    if(!sec.ideas||!sec.ideas.length) return;
+    const ideas=sec.ideas.slice().sort((a,b)=>(b.conviction||0)-(a.conviction||0));
+    let html=`<div class="sec" style="animation-delay:${delay.toFixed(2)}s"><div class="sec-head">
+      <span class="k">${esc(sec.key)}</span><h3>${esc(sec.label)}</h3><span class="n">${ideas.length}</span><span class="rule"></span></div>`;
+    delay+=.06;
+    ideas.forEach((it,i)=>{
+      const id=`${sec.key}-${i}`, c=it.conviction!=null?it.conviction:0;
+      // overview metric = SHORT form only (strip parenthetical / cap length); full version lives in the detail strip
+      const hmRaw = it.annualized!=null?String(it.annualized):(it.headline_metric!=null?String(it.headline_metric):"");
+      const hm = esc(hmRaw.split(" (")[0].replace(/\s+$/,"").slice(0,15));
+      let hml = it.annualized!=null?"annualized":esc(it.headline_metric_label||"");
+      if(it.resolution_date&&it.resolution_date!=="rolling") hml=`by ${esc(shortDate(it.resolution_date))}`;
+      else if(it.resolution_date==="rolling") hml="rolling";
+      html+=`<div class="row" id="${id}"><div class="head" onclick="this.parentElement.classList.toggle('open')">
+        <div class="conv"><div class="num" style="color:${convColor(c)}">${it.conviction!=null?c:"—"}</div>
+          <div class="bar"><i style="--p:${(c/100).toFixed(2)};background:${convColor(c)}"></i></div><div class="cap">CONV</div></div>
+        <div class="htext"><div class="t">${it.badge?`<span class="badge">${esc(it.badge)}</span>`:""}${esc(it.title)}</div>
+          <div class="o">${esc(it.one_liner||"")}</div></div>
+        ${hm?`<div class="metric"><div class="big">${hm}</div><div class="lab">${hml}</div></div>`:""}
+        <div class="chev">▶</div></div>
+        <div class="body"><div><div class="inner">${detail(it)}</div></div></div></div>`;
+    });
+    html+=`</div>`;
+    root.insertAdjacentHTML("beforeend",html);
+  });
+  if(DATA.rejected&&DATA.rejected.length){
+    let html=`<div class="rejected"><div class="sec-head"><span class="k">Filtered</span>
+      <h3>Rejected — looked like edges, aren't</h3><span class="n">${DATA.rejected.length}</span><span class="rule"></span></div>
+      <details class="rej"><summary>show the ${DATA.rejected.length} rejected (and why) — this is what proves the shortlist is clean</summary><div class="rej-list">`;
+    DATA.rejected.forEach(r=>{ html+=`<div class="rej-item"><b>${esc(r.title)}</b> — ${esc(r.reason)}</div>`; });
+    html+=`</div></details></div>`;
+    document.getElementById("rejected").innerHTML=html;
+  }
+}
+render();
+</script>
+</body>
+</html>

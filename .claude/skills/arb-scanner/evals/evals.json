@@ -1,0 +1,47 @@
+{
+ "skill_name": "arb-scanner",
+ "evals": [
+  {
+   "id": 1,
+   "name": "verify-pair-risk",
+   "prompt": "I keep hearing you can make free money on Polymarket. There are two markets: 'Fed rate cut by December 2026 meeting' and 'Will no Fed rate cuts happen in 2026?'. If I buy YES on both, is that a guaranteed risk-free profit? Check the actual order book depth and the resolution rules before you answer.",
+   "expected_output": "Identifies the two markets are logical complements (Dec is last 2026 FOMC meeting), pulls live depth to show the real edge + capacity (not just touch), reads both resolution rules, and gives an honest classification (risk-free vs basis risk) with return-on-capital, not a naive 'yes free money'.",
+   "files": [],
+   "assertions": [
+    {"text": "Correctly identifies the two markets as a complement pair (exactly one resolves $1 because Dec is the last 2026 FOMC meeting), so buy-both = $1 payout"},
+    {"text": "Pulls and cites actual order-book DEPTH (size/capacity in shares or $), not just the top-of-book price"},
+    {"text": "Reads/quotes the resolution rules of BOTH markets to check they resolve consistently"},
+    {"text": "Reports return-on-capital and/or annualized return with the resolution horizon, not just the raw cents-of-edge"},
+    {"text": "Gives an honest risk verdict (names any basis/resolution risk or confirms near-risk-free) rather than an unqualified 'yes, free money'"}
+   ]
+  },
+  {
+   "id": 2,
+   "name": "intra-basket-scan",
+   "prompt": "Scan Polymarket right now for any mutually-exclusive markets where the outcome prices don't add up to $1 - i.e. where I could buy or sell the whole set for an arbitrage. Rank what you find by how real and tradable it is, not just by the headline number.",
+   "expected_output": "Runs a global scan of negRisk baskets using executable bid/ask (not mids), ranks candidates, and explicitly distinguishes real edges from stale-quote/wide-spread artifacts and incomplete baskets. Reports return-on-capital and resolution horizon, not just the raw edge.",
+   "files": [],
+   "assertions": [
+    {"text": "Computes basket sums from executable bestBid/bestAsk (or full ladder), not from mid-prices"},
+    {"text": "Scans the broad open-market universe (hundreds of events / many negRisk baskets), not just a handful of hand-picked markets"},
+    {"text": "Explicitly flags stale-quote / wide-spread / incomplete-basket artifacts and excludes or downranks them"},
+    {"text": "Ranks by real tradability (liquidity/depth, return-on-capital, horizon), not by the headline edge number"},
+    {"text": "Output is a concrete ranked list with per-candidate edge, capacity, and resolution date"}
+   ]
+  },
+  {
+   "id": 3,
+   "name": "cross-event-rv",
+   "prompt": "Find me the best relative-value trades across related Polymarket markets (Fed, elections, crypto - wherever) and for each one tell me whether it's actually risk-free or has hidden resolution risk, plus roughly how much I could realistically make.",
+   "expected_output": "Finds cross-event logical links (complements/implications/duplicates/subset-sums) between different events, verifies them against live books, depth-analyzes the top ones for capacity, and classifies each as risk-free arb vs RV with a named break scenario. Honest about transient/small edges.",
+   "files": [],
+   "assertions": [
+    {"text": "Finds at least one logical link spanning DIFFERENT events (not just within-one-event basket sums)"},
+    {"text": "Verifies candidate links against live order books and computes the executable edge"},
+    {"text": "For each opportunity, classifies risk-free vs RV and names the specific resolution-divergence scenario for the RV ones"},
+    {"text": "Gives depth-aware capacity and realistic return-on-capital for the top pick(s)"},
+    {"text": "Honest about edges being small/transient/capacity-bound rather than overselling 'free money'"}
+   ]
+  }
+ ]
+}

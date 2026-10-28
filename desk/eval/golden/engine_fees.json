@@ -1,0 +1,37 @@
+{
+  "_doc": "Hand-computed golden (independent truth). OFFICIAL fee = C*feeRate*p*(1-p), feeRate per category (crypto 0.07, politics 0.04, sports 0.03, ...). Ladder-walk avg price is exact arithmetic.",
+  "fees": [
+    {"name": "sports@0.50 (docs peak 0.75%)", "shares": 100, "price": 0.50, "category": "sports", "ts": 1781568000, "expected_fee": 0.75},
+    {"name": "politics@0.50", "shares": 100, "price": 0.50, "category": "politics", "ts": 1781568000, "expected_fee": 1.0},
+    {"name": "crypto@0.50", "shares": 100, "price": 0.50, "category": "crypto", "ts": 1781568000, "expected_fee": 1.75},
+    {"name": "crypto@0.30 == @0.70 symmetry (docs example $1.47)", "shares": 100, "price": 0.30, "category": "crypto", "ts": 1781568000, "expected_fee": 1.47},
+    {"name": "crypto@0.70 symmetric", "shares": 100, "price": 0.70, "category": "crypto", "ts": 1781568000, "expected_fee": 1.47},
+    {"name": "geopolitics free", "shares": 100, "price": 0.50, "category": "geopolitics", "ts": 1781568000, "expected_fee": 0.0},
+    {"name": "maker is free", "shares": 100, "price": 0.50, "category": "politics", "mode": "maker", "ts": 1781568000, "expected_fee": 0.0},
+    {"name": "pre-fee-era is free", "shares": 100, "price": 0.50, "category": "politics", "ts": 1700000000, "expected_fee": 0.0},
+    {"name": "politics@0.10 (symmetric tail)", "shares": 100, "price": 0.10, "category": "politics", "ts": 1781568000, "expected_fee": 0.36}
+  ],
+  "engine": [
+    {
+      "name": "taker BUY walks two ask levels",
+      "book": {"bids": [[0.47, 1000]], "asks": [[0.50, 30], [0.51, 40]], "mid": 0.485},
+      "order": {"side": "BUY", "limit_price": 0.99, "qty": 50, "mode": "taker"},
+      "category": "politics", "ts": 1781568000,
+      "expected": {"filled_qty": 50.0, "avg_fill_price": 0.504, "fees": 0.49992, "degraded": false}
+    },
+    {
+      "name": "taker BUY limit caps the walk (partial fill)",
+      "book": {"bids": [[0.47, 1000]], "asks": [[0.50, 30], [0.55, 40]], "mid": 0.485},
+      "order": {"side": "BUY", "limit_price": 0.52, "qty": 50, "mode": "taker"},
+      "category": "politics", "ts": 1781568000,
+      "expected": {"filled_qty": 30.0, "avg_fill_price": 0.50, "fees": 0.3, "degraded": false}
+    },
+    {
+      "name": "taker SELL walks the bid side",
+      "book": {"bids": [[0.47, 20], [0.46, 100]], "asks": [[0.50, 30]], "mid": 0.485},
+      "order": {"side": "SELL", "limit_price": 0.01, "qty": 50, "mode": "taker"},
+      "category": "sports", "ts": 1781568000,
+      "expected": {"filled_qty": 50.0, "avg_fill_price": 0.464, "degraded": false}
+    }
+  ]
+}
